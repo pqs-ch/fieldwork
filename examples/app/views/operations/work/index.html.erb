@@ -1,0 +1,13 @@
+<% content_for :title, 'Work queue' %>
+<header class="page-header">
+  <div class="page-header-content">
+    <div class="page-header-title"><h1>Work queue</h1></div>
+  </div>
+</header>
+<div id="saved-work" class="stack" data-gap="section" data-shared="<%= @selected[:id] == 'shared' %>"
+     data-state="<%= @state.to_json %>" data-baseline="<%= @selected[:state].to_json %>" data-current-url="<%= work_url_for(page: @page) %>">
+  <section class="table-panel" data-data-table aria-label="Work queue results">
+    <%= render 'view_bar' %>
+    <%= render 'table' %>
+  </section>
+</div>

@@ -1,0 +1,86 @@
+<header class="page-header">
+  <div class="page-header-title"><h1>Project brief</h1></div>
+  <a href="/mixed-forms/mixed-form/other">Workspace</a>
+</header>
+<% if flash[:notice] %><p class="notice" data-tone="success" role="status"><%= flash[:notice] %></p><% end %>
+<% if @draft_notice %><p class="notice" role="status"><%= @draft_notice %></p><% end %>
+<%= fieldwork_form_with url: "/mixed-forms/mixed-form", id: "project-brief", composition: :mixed, mode: params[:mode] == "create" ? :create : :edit, local: true,
+      multipart: true, baseline: { "project[title]" => @saved['title'], "project[owner_id]" => @saved['owner_id'], "project[dates_required]" => @saved['dates_required'], "project[reviewer_ids][]" => @saved['reviewer_ids'] },
+      error: @failure_message, submit_label: params[:mode] == "create" ? "Create project" : "Save project", actions_position: :start, class: 'content-surface', data: { review_transport: params[:transport] == 'native' ? 'native' : 'callback' } do |f| %>
+  <%= hidden_field_tag :transport, params[:transport] %>
+  <%= hidden_field_tag :mode, params[:mode] %>
+  <div class="error-summary" data-form-error-summary role="region" tabindex="-1" aria-labelledby="brief-errors" hidden>
+    <h2 id="brief-errors">Check the project details</h2><ul data-form-error-list></ul>
+  </div>
+  <div class="section-stack">
+    <section class="stack" aria-labelledby="details-title">
+      <h2 id="details-title">Project details</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="project-title">Project name</label>
+          <input id="project-title" name="project[title]" value="<%= @draft['title'] %>" required aria-describedby="project-title-error">
+          <p class="field-error" id="project-title-error" <%= 'hidden' unless @errors['title'] %>><%= @errors['title'] %></p>
+        </div>
+        <div class="field" data-searchable-selection data-label="Owner">
+          <label for="project-owner">Owner</label>
+          <select id="project-owner" name="project[owner_id]"><% @people.each do |id, name| %><option value="<%= id %>" <%= 'selected' if id == @draft['owner_id'] %>><%= name %></option><% end %></select>
+        </div>
+      </div>
+      <div class="field" data-searchable-selection data-label="Reviewers" data-search-label="Search reviewers" data-people-lookup>
+        <label for="project-reviewers">Reviewers</label><input type="hidden" name="project[reviewer_ids][]" value="">
+        <select id="project-reviewers" name="project[reviewer_ids][]" multiple required aria-describedby="reviewers-hint reviewers-error"><% @people.each do |id, name| %><option value="<%= id %>" <%= 'selected' if @draft['reviewer_ids'].include?(id) %>><%= name %></option><% end %></select>
+        <p class="hint" id="reviewers-hint">Choose at least one person.</p>
+        <p class="field-error" id="reviewers-error" <%= 'hidden' unless @errors['reviewer_ids'] %>><%= @errors['reviewer_ids'] %></p>
+      </div>
+    </section>
+    <section class="stack" aria-labelledby="deliverables-title">
+      <h2 id="deliverables-title">Deliverables</h2>
+      <input type="hidden" name="project[dates_required]" value="0">
+      <label class="check"><input id="dates-required" type="checkbox" name="project[dates_required]" value="1" <%= 'checked' if @draft['dates_required'] %>>Require a due date for every deliverable</label>
+      <div data-repeatable-group data-repeat-label="Deliverable">
+        <div class="repeatable-list" data-density="compact" data-repeat-list>
+          <% @draft['deliverables'].each do |key, row| %><%= render 'deliverable', key: key, row: row, prefix: 'deliverable', error: @errors["deliverable-#{key}"] %><% end %>
+        </div>
+        <template data-repeat-template><%= render 'deliverable', key: '__KEY__', row: {}, prefix: 'deliverable', error: nil %></template>
+        <template data-repeat-baseline><% @saved['deliverables'].each do |key, row| %><%= render 'deliverable', key: key, row: row, prefix: 'saved-deliverable', error: nil %><% end %></template>
+        <button class="button" type="button" data-repeat-add disabled>Add deliverable</button>
+        <noscript><button class="button" id="native-add-deliverable" type="submit" name="intent" value="add" formnovalidate <%= 'autofocus' if @focus_id == 'native-add-deliverable' %>>Add deliverable</button></noscript>
+      </div>
+    </section>
+    <section class="stack" aria-labelledby="files-title">
+      <h2 id="files-title">Supporting files</h2>
+      <% if @reselect %>
+        <div class="stack" data-file-reselection>
+          <p class="notice" data-tone="warning" role="status">Your other entries are retained. Choose your files again; this response could not retain their contents.</p>
+          <h3>Previous file notes</h3>
+          <ul class="attachment-list" aria-label="Previous file notes">
+            <% @previous_files.each do |file| %>
+              <li class="attachment">
+                <div class="attachment-content"><strong><%= file['name'] %></strong><p><%= file['description'] %></p></div>
+                <%= hidden_field_tag 'previous_files[][name]', file['name'], id: nil %>
+                <%= hidden_field_tag 'previous_files[][description]', file['description'], id: nil %>
+              </li>
+            <% end %>
+          </ul>
+          <p class="hint">These files have not been added. Check the notes when selecting them again.</p>
+        </div>
+      <% end %>
+      <ul id="saved-attachments" class="attachment-list" aria-label="Saved attachments"><% @saved['attachments'].each do |file| %><li class="attachment"><div class="attachment-content"><strong><%= file['name'] %></strong><p><%= file['description'] %></p></div></li><% end %></ul>
+      <div class="file-selection stack" data-file-selection>
+        <div class="file-dropzone" data-density="compact" data-file-dropzone>
+          <label for="brief-files">Add files (optional)</label>
+          <p class="hint" id="brief-files-hint">Choose files<span data-file-enhanced-hint hidden> or drop them here</span>. Saved with the project.</p>
+          <input type="file" id="brief-files" name="files[]" multiple aria-describedby="brief-files-hint">
+        </div>
+        <ul class="file-selection-list" data-file-list aria-label="New supporting files" hidden></ul>
+        <template data-file-template>
+          <li class="file-selection-item" data-file-item>
+            <div class="file-selection-item-header"><div><strong data-file-name></strong><p class="hint" data-file-size></p></div><button class="button" type="button" data-variant="quiet" data-file-remove disabled>Remove</button></div>
+            <div class="field"><label for="file-description-__KEY__">Description (optional)</label><textarea id="file-description-__KEY__" name="descriptions[]" data-file-description rows="2"></textarea></div>
+          </li>
+        </template>
+        <p class="hint" data-file-status role="status"></p>
+      </div>
+    </section>
+  </div>
+<% end %>

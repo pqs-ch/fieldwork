@@ -1,0 +1,6 @@
+<% content_for :title, 'Check the updated import' %><header class="page-header"><div class="page-header-content"><h1>Check the updated import</h1></div></header>
+<p class="notice" data-tone="warning" role="status" data-result tabindex="-1"><%= @error %></p><% if @mapping %>
+<section class="table-panel"><div class="table-scroll" role="region" aria-label="Attempted and saved mapping" tabindex="0"><table class="data-table"><caption>Mapping comparison</caption><thead><tr><th scope="col">Supplier field</th><th scope="col">Your attempted source</th><th scope="col">Saved source</th></tr></thead><tbody>
+<% FileImport::SupplierImports::FIELDS.each do |field,label| %><tr><th scope="row"><%= label %></th><% [@mapping[field], @batch[:mapping][field]].each do |value| %><td data-wrap="wrap"><%= value.to_s.match?(/\A\d+\z/) && @batch[:headers][value.to_i] ? "#{@batch[:headers][value.to_i]} (column #{value.to_i+1})" : 'Not selected' %></td><% end %></tr><% end %>
+</tbody></table></div></section><% end %>
+<div class="cluster"><%= link_to 'Open saved mapping', mapping_file_import_import_path(@batch[:id]), class: 'button' %><% if @batch[:validation] %><%= link_to 'Check current row results', review_file_import_import_path(@batch[:id]), class: 'button', data: { intent: 'primary' } %><% end %></div>

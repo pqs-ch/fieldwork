@@ -1,0 +1,17 @@
+.review-masthead, .review-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: .75rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-canvas);
+}
+.review-masthead { justify-content: space-between; }
+.review-navigation { font-size: .8125rem; }
+.review-navigation > span { margin-right: auto; color: var(--color-muted); }
+.review-catalogue { width: 100%; }
+.review-catalogue th:first-child { width: 24%; }
+.review-catalogue th:last-child { width: 25%; }
+.review-catalogue td, .review-catalogue tbody th { padding-block: 1rem; vertical-align: top; }
+.review-catalogue tbody th { scroll-margin-top: 1rem; }

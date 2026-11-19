@@ -1,0 +1,71 @@
+<% title = RecordActivities::ServiceRequests.title(@kind); content_for :title, title %>
+<% submit_label = {'assessment' => 'Record assessment', 'order' => 'Record order', 'installation' => 'Confirm installation', 'note' => 'Record note'}.fetch(@kind) %>
+<% actions = lambda do |_form|
+     controls = [button_tag(submit_label, class: 'button', disabled: @error.present?, data: {intent: @error ? nil : 'primary'})]
+     if @error
+       controls << link_to('Review the latest request in a new tab', record_activities_request_path(@record[:id]),
+         target: '_blank', rel: 'noopener', class: 'button', data: {intent: 'primary'})
+     end
+     safe_join(controls)
+   end %>
+<header class="page-header">
+  <div class="page-header-content">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><ol>
+      <li><%= link_to 'Requests', record_activities_requests_path %></li>
+      <li><%= link_to "SR-#{@record[:id]}", record_activities_request_path(@record[:id]) %></li>
+      <li><span aria-current="page"><%= title %></span></li>
+    </ol></nav>
+    <div class="page-header-title"><h1 id="activity-form-title"><%= title %></h1></div>
+    <% unless @error %>
+      <p class="page-header-description"><%= {
+        'assessment' => 'Record your findings and cost estimate to make this request ready to order.',
+        'order' => 'Record the order so the replacement can be tracked through installation.',
+        'installation' => 'Record the installation and test result to complete this request.',
+        'note' => 'Add a progress update to the history. The current state will stay the same.'
+      }.fetch(@kind) %></p>
+    <% end %>
+  </div>
+</header>
+<div class="content-surface">
+  <div class="sidebar-layout" data-divider>
+    <%= fieldwork_form_with model: @activity, url: record_activities_request_activities_path(@record[:id], kind: @kind),
+          local: true, mode: :create, baseline: @baseline, submit_label: submit_label, pending_label: 'Recording…', actions: actions,
+          cancel: record_activities_request_path(@record[:id]), error: @error, id: 'activity-form',
+          aria: {labelledby: 'activity-form-title'}, data: {draft_protection: title} do |form| %>
+      <%= hidden_field_tag :attempt, @attempt %>
+      <div class="stack">
+        <% if @kind == 'assessment' %>
+          <%= fieldwork_field form, :estimate, type: :number, label: 'Estimated cost (CHF)', min: '0.01', step: '0.01', required: true %>
+        <% elsif @kind == 'order' %>
+          <%= fieldwork_field form, :supplier, label: 'Supplier', required: true %>
+          <%= fieldwork_field form, :order_reference, label: 'Order reference', required: true %>
+          <%= fieldwork_field form, :expected_on, type: :date, label: 'Expected delivery', required: true %>
+        <% elsif @kind == 'installation' %>
+          <%= fieldwork_field form, :installed_on, type: :date, label: 'Installation date', required: true %>
+          <div class="field">
+            <label class="check">
+              <%= form.check_box :tested, required: true, aria: {invalid: @activity.errors[:tested].any?, describedby: 'tested-error'} %>
+              Replacement installed and working
+            </label>
+            <p class="field-error" id="tested-error"><%= @activity.errors.full_messages_for(:tested).join('. ') %></p>
+          </div>
+        <% end %>
+        <%= fieldwork_field form, :notes, type: :textarea,
+              label: {'assessment' => 'Assessment findings', 'order' => 'Order note', 'installation' => 'Installation outcome', 'note' => 'Progress note'}.fetch(@kind),
+              rows: 5, required: true, maxlength: 1200, hint: 'Up to 1,200 characters.' %>
+      </div>
+    <% end %>
+    <aside class="stack" aria-labelledby="context-title">
+      <h2 id="context-title">Request context</h2>
+      <p><strong><%= @record[:title] %></strong></p>
+      <p class="hint">SR-<%= @record[:id] %> · <%= @record[:location] %></p>
+      <dl class="description-list" data-density="compact">
+        <div><dt>Current state</dt><dd><%= state_label(@record) %></dd></div>
+        <div><dt>Owner</dt><dd><%= @record[:owner] %></dd></div>
+        <% (@record[:installation] || @record[:order] || @record[:assessment] || {}).except('notes').each do |key, value| %>
+          <div><dt><%= activity_label(key) %></dt><dd><%= activity_value(key, value) %></dd></div>
+        <% end %>
+      </dl>
+    </aside>
+  </div>
+</div>

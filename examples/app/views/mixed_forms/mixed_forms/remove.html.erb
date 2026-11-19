@@ -1,0 +1,15 @@
+<header class="page-header"><div class="page-header-title"><h1>Remove deliverable?</h1></div></header>
+<%= form_with url: '/mixed-forms/mixed-form', local: true, class: 'content-surface stack', data: { turbo: false } do %>
+  <%= render 'draft_fields' %>
+  <% row = @draft['deliverables'].fetch(@removing_key) %>
+  <p class="hint">Deliverable <%= @draft['deliverables'].keys.index(@removing_key) + 1 %></p>
+  <h2><%= row['title'].presence || 'Untitled deliverable' %></h2>
+  <p>This removes the row and its values from this draft. <%= params[:mode] == 'create' ? 'Create project to record the resulting brief.' : 'Save project afterwards to update the saved brief.' %></p>
+  <% if @reselect %>
+    <p class="notice" data-tone="warning">Your other entries and file notes are retained. Choose your files again when you return to the brief; their contents could not be retained.</p>
+  <% end %>
+  <div class="form-actions">
+    <button class="button" type="submit" name="intent" value="keep:<%= @removing_key %>" autofocus>Keep editing</button>
+    <button class="button" type="submit" name="intent" value="confirm_remove:<%= @removing_key %>" data-intent="danger">Remove deliverable</button>
+  </div>
+<% end %>

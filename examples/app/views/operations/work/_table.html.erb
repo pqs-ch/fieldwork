@@ -1,0 +1,33 @@
+<%= form_with url: operations_work_index_path, method: :get, class: 'table-options-form', data: {table_query: true} do |form| %>
+  <%= hidden_field_tag :view, @selected[:id], id: nil %>
+  <%= hidden_field_tag :explicit, '1', id: nil %>
+  <%= hidden_field_tag :basis, @base_revision, id: nil %>
+  <%= hidden_field_tag :columns, @columns.to_json, id: nil, data: {work_columns: true} %>
+  <%= render 'query_fields', form: form %>
+  <% unless @query.valid? %>
+    <p class="table-feedback" data-tone="error" role="alert">Filters could not be applied. <%= @query.errors.values.join(' ') %></p>
+  <% end %>
+  <button class="button" type="submit" data-table-submit>Apply filters</button>
+  <%= render 'rows' %>
+  <footer class="table-footer">
+    <p data-work-count>
+      <% if !@query.valid? || @layout_invalid %>
+        Results unavailable
+      <% elsif @query.rows.size <= Operations::WorkQueue::PAGE_SIZE %>
+        <%= pluralize @query.rows.size, 'task' %>
+      <% else %>
+        <% first = (@page - 1) * Operations::WorkQueue::PAGE_SIZE + 1 %>
+        <% last = [@page * Operations::WorkQueue::PAGE_SIZE, @query.rows.size].min %>
+        <%= "#{first}–#{last} of #{@query.rows.size} tasks" %>
+      <% end %>
+    </p>
+    <nav class="pagination" aria-label="Work result pages">
+      <% if @page > 1 %>
+        <%= link_to 'Previous', work_url_for(page: @page - 1), data: {work_page: true} %>
+      <% end %>
+      <% if @page * Operations::WorkQueue::PAGE_SIZE < @query.rows.size %>
+        <%= link_to 'Next', work_url_for(page: @page + 1), data: {work_page: true} %>
+      <% end %>
+    </nav>
+  </footer>
+<% end %>

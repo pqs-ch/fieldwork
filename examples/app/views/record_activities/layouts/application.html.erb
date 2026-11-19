@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : 'Service requests' %> · Northstar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag 'fieldwork/ui', 'fieldwork/tables', 'data-turbo-track': 'reload' %>
+  <%= javascript_importmap_tags "record_activities/application" %>
+  <%= stylesheet_link_tag "review", "data-turbo-track": "reload" %>
+</head>
+<body>
+<%= render "review/navigation" %>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="application-layout" data-navigation="top"><div class="application-layout-frame">
+  <% requests_current = controller_name == 'requests' && action_name == 'index' ? 'page' : 'true' %>
+  <header class="application-layout-compact"><a class="brand" href="/record-activities/requests"><span>Workplace</span></a><div class="stack"><%= render 'record_activities/layouts/navigation', label: 'Compact workspace', current: requests_current %></div></header>
+  <header class="application-layout-top"><div class="application-layout-top-inner"><a class="brand" href="/record-activities/requests"><span>Workplace</span></a><%= render 'record_activities/layouts/navigation', label: 'Workspace', current: requests_current %></div></header>
+  <div class="application-layout-content"><main class="application-layout-main stack" data-gap="section" id="main" tabindex="-1">
+    <% if flash[:notice] %><p class="notice" data-tone="success" role="status" id="record-result" tabindex="-1"><%= flash[:notice] %></p><% end %>
+    <%= yield %>
+  </main></div>
+</div></div>
+</body></html>

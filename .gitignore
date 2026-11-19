@@ -1,0 +1,11 @@
+.DS_Store
+/STATUS.md
+*.gem
+__pycache__/
+.playwright-cli/
+/output/playwright/
+/examples/log/
+/examples/tmp/
+/examples/storage/
+/examples/public/assets/
+/examples/.bundle/

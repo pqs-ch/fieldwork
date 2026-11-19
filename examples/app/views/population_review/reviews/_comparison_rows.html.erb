@@ -1,0 +1,26 @@
+<dl class="record-comparison">
+  <% rows.each do |row| %>
+    <div class="record-comparison-row" data-change="<%= row[:change] %>" data-comparison-field="<%= row[:key] %>">
+      <dt><span class="record-comparison-label"><%= row[:label] %></span><span class="record-comparison-change"><%= row[:change].capitalize %></span></dt>
+      <% {before: 'Assessed', after: 'Current'}.each do |side, label|; value = row[side] %>
+        <dd>
+          <span class="record-comparison-side"><%= label %></span>
+          <div class="record-comparison-content">
+            <% if value.nil? %>
+              <p class="muted"><%= row[:type] == :evidence ? 'Not linked' : 'Not recorded' %></p>
+            <% elsif row[:type] == :evidence %>
+              <div class="stack" data-gap="tight">
+                <p><%= value[:name] %></p>
+                <p class="hint"><%= value[:source] %> · <%= evidence_date(value) %></p>
+                <p><%= value[:purpose] %></p>
+                <p><strong>Availability:</strong> <%= value[:availability] %></p>
+              </div>
+            <% else %>
+              <p><%= comparison_field(value) %></p>
+            <% end %>
+          </div>
+        </dd>
+      <% end %>
+    </div>
+  <% end %>
+</dl>

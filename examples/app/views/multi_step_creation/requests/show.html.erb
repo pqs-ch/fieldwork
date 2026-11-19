@@ -1,0 +1,8 @@
+<% content_for :title, "Request RR-#{@record[:id]}" %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Review requests', multi_step_creation_requests_path %></li><li><span aria-current="page">RR-<%= @record[:id] %></span></li></ol></nav>
+<header class="page-header"><div class="page-header-content"><p class="eyebrow">RR-<%= @record[:id] %></p><h1>Review request created</h1></div></header>
+<p class="notice" data-tone="success" role="status" tabindex="-1" data-result>The review request is saved.</p>
+<div class="content-surface stack" data-gap="section">
+  <%= render 'multi_step_creation/drafts/answers', values: @record[:values], change: false %>
+  <div class="form-actions"><%= link_to 'View all review requests', multi_step_creation_requests_path, class: 'button' %><%= button_to 'Create another request', multi_step_creation_drafts_path, class: 'button' %></div>
+</div>

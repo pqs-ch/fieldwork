@@ -1,0 +1,12 @@
+<fieldset class="repeatable-item" data-repeat-item data-repeat-key="<%= key %>">
+  <legend data-repeat-title>Deliverable <%= @draft['deliverables'].keys.index(key).to_i + 1 %></legend>
+  <div class="repeatable-item-fields">
+  <div class="field"><label for="<%= prefix %>-<%= key %>-title">Title</label>
+    <input id="<%= prefix %>-<%= key %>-title" name="project[deliverables][<%= key %>][title]" value="<%= row['title'] %>" required aria-describedby="<%= prefix %>-<%= key %>-error" <%= 'autofocus' if @focus_id == "#{prefix}-#{key}-title" %>>
+    <p id="<%= prefix %>-<%= key %>-error" class="field-error" <%= 'hidden' unless error %>><%= error %></p>
+  </div>
+  <div class="field"><label for="<%= prefix %>-<%= key %>-due"><%= @draft["dates_required"] ? "Due date" : "Due date (optional)" %></label><input id="<%= prefix %>-<%= key %>-due" type="date" name="project[deliverables][<%= key %>][due_on]" value="<%= row['due_on'] %>" <%= "required" if @draft["dates_required"] %> aria-describedby="<%= prefix %>-<%= key %>-due-error"><p class="field-error" id="<%= prefix %>-<%= key %>-due-error" <%= "hidden" unless @errors["due-#{key}"] && prefix == "deliverable" %>><%= @errors["due-#{key}"] if prefix == "deliverable" %></p></div>
+  <button class="button" data-variant="quiet" type="button" data-repeat-remove disabled>Remove</button>
+  <noscript><button class="button" data-variant="quiet" id="native-remove-<%= key %>" aria-label="Remove deliverable <%= @draft['deliverables'].keys.index(key).to_i + 1 %>" type="submit" name="intent" value="remove:<%= key %>" formnovalidate <%= 'autofocus' if @focus_id == "native-remove-#{key}" %>>Remove</button></noscript>
+  </div>
+</fieldset>

@@ -1,0 +1,9 @@
+<section class="stack" aria-labelledby="<%= kind %>-title">
+  <h2 id="<%= kind %>-title" tabindex="-1"><%= {'assessment' => 'Assessment', 'order' => 'Order', 'installation' => 'Installation'}.fetch(kind) %></h2>
+  <dl class="description-list" data-density="compact">
+    <% values.except('notes').each do |key, value| %>
+      <div><dt><%= activity_label(key) %></dt><dd><%= activity_value(key, value) %></dd></div>
+    <% end %>
+  </dl>
+  <div class="rich-content"><%= simple_format(h(values['notes'])) %></div>
+</section>

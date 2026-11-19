@@ -1,0 +1,19 @@
+<% content_for :title, 'Draft changed in another tab' %>
+<header class="page-header">
+  <div class="page-header-content"><h1>Draft changed in another tab</h1></div>
+</header>
+<p class="notice" data-tone="warning" role="status" tabindex="-1" data-result>
+  Your attempted values have not overwritten the saved draft. Compare them before opening the current draft.
+</p>
+<div class="grid">
+  <section class="panel stack" aria-labelledby="attempted-title">
+    <h2 id="attempted-title">Your attempted values</h2>
+    <%= render 'raw_values', values: @entry.values %>
+  </section>
+  <section class="panel stack" aria-labelledby="saved-title">
+    <h2 id="saved-title">Current saved values</h2>
+    <%= render 'raw_values', values: @draft[:values] %>
+  </section>
+</div>
+<p class="hint">Open the saved draft in a new tab to compare or copy values. Your attempted values stay here; nothing is merged automatically.</p>
+<%= link_to 'Open current saved draft in a new tab', new_purchase_request_purchase_path(attempt: @attempt), target: '_blank', rel: 'noopener', class: 'button', data: {intent: 'primary'} %>

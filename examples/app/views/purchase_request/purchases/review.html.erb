@@ -1,0 +1,14 @@
+<% content_for :title, 'Review purchase request' %>
+<header class="page-header"><div class="page-header-title"><h1>Review purchase request</h1></div></header>
+<% if @error %><p class="notice" data-tone="error" role="status" tabindex="-1" data-result><%= @error %></p><% end %>
+<div class="content-surface stack" data-gap="section">
+  <%= render 'values' %>
+  <%= form_with url: purchase_request_purchases_path, local: true, id: 'confirm-purchase' do %>
+    <%= hidden_field_tag :attempt, @attempt %><%= hidden_field_tag :revision, @draft[:revision] %>
+    <p class="hint">Recording saves this request. No order or payment is sent.</p>
+    <div class="form-actions">
+      <%= link_to 'Change details', new_purchase_request_purchase_path(attempt: @attempt), class: 'button' %>
+      <%= button_tag 'Record purchase request', class: 'button', data: {intent: 'primary', turbo_submits_with: 'Recording…'} %>
+    </div>
+  <% end %>
+</div>

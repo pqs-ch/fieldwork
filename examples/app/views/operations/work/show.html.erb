@@ -1,0 +1,7 @@
+<% content_for :title,@item[:name] %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Back to work queue',@back %></li><li><span aria-current="page">Task</span></li></ol></nav>
+<header class="page-header"><div class="page-header-content"><h1><%= @item[:name] %></h1><p class="page-header-description"><%= @item[:kind] %> · <%= @item[:owner] %> · Due <time datetime="<%= @item[:due_on] %>"><%= Date.iso8601(@item[:due_on]).strftime('%d %b %Y') %></time></p></div><span class="status-indicator" data-tone="<%= task_tone(@item[:status]) %>"><%= @item[:status] %></span></header>
+<% if @item[:status]=='Done' %><p class="notice" role="status" tabindex="-1" data-work-result>This task is already complete.</p><p><%= @item[:notes] %></p><%= link_to 'Return to work queue',@back,class:'button' %>
+<% else %><p>Record the outcome of this <%= @item[:kind].downcase %>. Completing it removes it from open-work views.</p>
+<%= fieldwork_form_with url:operations_complete_work_task_path(@item[:id]),local:true,id:'work-task-editor',mode: :create,baseline:{'notes'=>@item[:notes]},submit_label:task_action(@item),cancel:@back,error:@task_error,class:'content-surface',data:{draft_protection:'Task outcome'} do %><%= hidden_field_tag :back,@back %><%= hidden_field_tag :task_version,params[:task_version].presence || @item[:version] %><div class="field"><label for="task-notes">Outcome notes</label><textarea id="task-notes" name="notes" rows="4" required maxlength="600"><%= @notes %></textarea></div><% end %>
+<% end %>

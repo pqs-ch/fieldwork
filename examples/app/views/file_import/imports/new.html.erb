@@ -1,0 +1,19 @@
+<% content_for :title, 'Upload supplier CSV' %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Supplier imports', file_import_imports_path %></li><li><span aria-current="page">Upload</span></li></ol></nav>
+<header class="page-header"><div class="page-header-title"><h1>Upload supplier CSV</h1></div></header>
+<% if @reselect %><p class="notice" role="status">Choose a corrected CSV to try again. Your previous file was not accepted.</p><% end %>
+<%= fieldwork_form_with url: file_import_imports_path, local: true, multipart: true, mode: :create, composition: :mixed, id: 'import-upload', submit_label: 'Upload and map columns', pending_label: 'Uploading CSV…', error: @error,
+  class: 'content-surface', data: { draft_protection: 'Selected supplier CSV', transport: params[:transport] } do %>
+  <%= hidden_field_tag :transport, params[:transport] %>
+  <div class="file-selection stack" data-file-selection>
+    <div class="file-dropzone" data-density="compact" data-file-dropzone>
+      <label for="source">Supplier CSV</label>
+      <p class="hint" id="source-hint">Choose a CSV<span data-file-enhanced-hint hidden> or drop it here</span>. UTF-8 with a header row, up to 100 data rows, 12 columns and 100 KB.</p>
+      <input id="source" type="file" name="source" accept=".csv,text/csv" required aria-describedby="source-hint">
+    </div>
+    <ul class="file-selection-list" data-file-list aria-label="Selected import file" hidden></ul>
+    <template data-file-template><li class="file-selection-item" data-file-item><div class="file-selection-item-header"><div><strong data-file-name></strong><p class="hint" data-file-size></p></div><button type="button" class="button" data-file-remove disabled>Remove</button></div></li></template>
+    <p class="hint" data-file-status role="status"></p>
+  </div>
+  <div class="cluster"><%= link_to 'Download sample CSV', sample_file_import_imports_path, download: true %><p class="hint">Map supplier reference, name and owner email after upload.</p></div>
+<% end %>

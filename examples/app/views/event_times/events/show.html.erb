@@ -1,0 +1,6 @@
+<% content_for :title, @record[:subject] %>
+<header class="page-header"><div class="page-header-content"><div class="page-header-title"><h1><%= @record[:subject] %></h1><span class="status-indicator" data-tone="success">Recorded</span></div></div><div class="page-header-actions"><%= link_to 'Record another event', new_event_times_event_path, class: 'button' %></div></header>
+<div class="content-surface"><div class="section-stack">
+<%= render 'times' %>
+<section class="stack" aria-labelledby="recording-heading"><h2 id="recording-heading">Recording</h2><dl class="description-list" data-density="compact"><div><dt>Recorded at</dt><dd><time datetime="<%= @record[:recorded_at] %>" data-recorded-time><%= utc_label(@record[:recorded_at]) %></time></dd></div><div><dt>Recorded by</dt><dd><%= @record[:actor] %></dd></div></dl></section>
+</div></div>

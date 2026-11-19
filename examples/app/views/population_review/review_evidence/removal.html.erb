@@ -1,0 +1,6 @@
+<% content_for :title, 'Remove evidence link' %>
+<header class="page-header"><div class="page-header-content"><h1>Remove evidence link</h1><p class="page-header-description"><%= @artifact&.fetch(:name) || 'This evidence' %> · <%= @input[:captured][:name] %></p></div></header>
+<section class="content-surface stack"><h2>Only this account’s link will be removed</h2><p>The original stays in the evidence library and remains available to other accounts. Earlier assessments retain their recorded reference.</p><p>If this account already has an assessment, it will need reassessment before the unfinished review can complete.</p>
+<% if @error %><p class="notice" data-tone="error" role="alert"><%= @error %></p><% end %>
+<%= form_with url: population_review_review_remove_evidence_path(@review[:id], @input[:id], params[:use_id]), class: 'stack' do %><%= hidden_field_tag :attempt, @attempt %><%= hidden_field_tag :view, @view %><div class="cluster"><%= link_to 'Cancel', population_review_review_input_path(@review[:id], @input[:id], view: @view, anchor: 'evidence-heading'), class: 'button' %><%= button_tag 'Remove link', class: 'button', data: {intent: 'danger', turbo_submits_with: 'Removing…'} %></div><% end %>
+</section>

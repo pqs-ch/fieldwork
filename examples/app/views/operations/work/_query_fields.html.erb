@@ -1,0 +1,49 @@
+<div class="field">
+  <%= form.label :sort, 'Sort tasks' %>
+  <%= form.select :sort, Operations::WorkQueueQuery::SORT_OPTIONS, {selected: @query.sort}, data: {table_sort: true} %>
+</div>
+<fieldset class="table-column-fields" id="name-options" data-table-column="name" data-label="Task" data-type="text">
+  <legend>Task</legend>
+  <%= render 'operations/projects/sort_actions' %>
+  <button class="menu-command" type="button" data-reset-filter disabled>Clear task filter</button>
+  <div class="field">
+    <%= form.label :name_condition, 'Text filters' %>
+    <%= form.select :name_condition, Operations::ProjectQuery::TEXT_OPTIONS, {selected: @query.name_condition}, data: {filter_condition: true} %>
+  </div>
+  <div class="field" data-when="equals not-equals starts ends contains not-contains">
+    <%= form.label :name_text, 'Task name' %>
+    <%= form.text_field :name_text, value: @query.name_text, data: {filter_text: true} %>
+  </div>
+</fieldset>
+<% value_filters = [
+  ['owner', 'Owner', Operations::WorkQueue::OWNERS, @query.owner_values],
+  ['status', 'State', Operations::WorkQueue::STATUSES, @query.status_values],
+  ['kind', 'Type', Operations::WorkQueue::KINDS, @query.kind_values]
+] %>
+<% value_filters.each do |key, label, choices, selected| %>
+  <fieldset class="table-column-fields" id="<%= key %>-options" data-table-column="<%= key %>" data-label="<%= label %>" data-type="values">
+    <legend><%= label %></legend>
+    <%= render 'operations/projects/sort_actions' %>
+    <button class="menu-command" type="button" data-reset-filter disabled>Clear <%= label.downcase %> filter</button>
+    <div class="field">
+      <label class="visually-hidden" for="<%= key %>-search">Search <%= label.downcase %> values</label>
+      <input type="search" id="<%= key %>-search" placeholder="Search" disabled data-value-search>
+    </div>
+    <%= hidden_field_tag "#{key}_values_present", '1', id: nil %>
+    <label class="check filter-all">
+      <input type="checkbox" data-select-values disabled <%= 'checked' if choices.all? { |value| selected.include?(value) } %>>
+      <span data-select-values-label>Select all</span>
+    </label>
+    <div class="filter-values">
+      <% choices.each do |value| %>
+        <label class="check">
+          <%= check_box_tag "#{key}_values[]", value, selected.include?(value), id: nil, data: {filter_value: true, label: value} %>
+          <%= value %>
+        </label>
+      <% end %>
+    </div>
+    <p class="hint" data-value-count role="status"></p>
+    <p class="hint" data-values-empty hidden>No matching values</p>
+  </fieldset>
+<% end %>
+<%= render 'operations/projects/date_filter', form: form %>

@@ -1,0 +1,7 @@
+<% content_for :title, 'Supplier import review scenarios' %>
+<header class="page-header"><div class="page-header-content"><h1>Supplier import review scenarios</h1><p class="page-header-description"><%= @batch[:filename] %></p></div></header>
+<section class="content-surface stack" aria-labelledby="import-failure-title">
+  <h2 id="import-failure-title">Temporary row failure</h2>
+  <p>The next import will fail once. All or nothing rolls back the eligible batch; valid rows only retains other successes. Retry imports only the unsuccessful rows.</p>
+  <%= form_with url: scenario_file_import_import_path(@batch[:id]), local: true do %><div class="form-actions"><%= link_to 'Return to row check', review_file_import_import_path(@batch[:id]), class: 'button' %><%= button_tag 'Fail one ready row once', class: 'button' %></div><% end %>
+</section>

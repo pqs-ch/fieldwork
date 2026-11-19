@@ -1,0 +1,7 @@
+<nav class="primary-navigation" aria-label="<%= label %>" data-orientation="<%= orientation %>">
+  <% area_current = action_name == 'index' ? 'page' : 'true' %>
+  <ul class="primary-navigation-list">
+    <li><%= link_to operations_work_index_path, aria: {current: controller_name == 'work' ? area_current : nil} do %><%= fieldwork_icon 'list-todo' %><span>Work queue</span><% end %></li>
+    <li><%= link_to operations_projects_path, aria: {current: controller_name == 'projects' ? area_current : nil} do %><%= fieldwork_icon 'folder' %><span>Projects</span><% end %></li>
+  </ul>
+</nav>

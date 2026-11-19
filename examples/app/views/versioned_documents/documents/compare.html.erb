@@ -1,0 +1,52 @@
+<header class="page-header"><div class="page-header-content"><h1>Compare saved revisions</h1><p>Markdown source · + added · − removed. Underlined/struck words identify supplied word changes.</p></div></header>
+<div class="content-surface stack" data-gap="section">
+<%= form_with url: example_url('compare').split('?').first, method: :get, class: 'comparison-selection' do |f| %>
+  <div class="field"><%= f.label :earlier, 'Earlier revision' %><%= f.select :earlier, @revisions.map { |r| [revision_label(r), r[:id]] }, selected: params[:earlier], include_blank: 'No predecessor' %></div>
+  <div class="field"><%= f.label :later, 'Later revision' %><%= f.select :later, @revisions.map { |r| [revision_label(r), r[:id]] }, selected: params[:later] %></div>
+  <%= f.submit 'Compare revisions', class: 'button' %>
+<% end %>
+<section class="document-comparison" data-document-comparison data-earlier-revision="<%= @earlier&.dig(:id) %>" data-later-revision="<%= @later&.dig(:id) %>" aria-labelledby="pair-title">
+<h2 id="pair-title"><%= @earlier ? revision_label(@earlier) : "No earlier revision (#{params[:earlier].presence || 'not selected'})" %> → <%= @later ? revision_label(@later) : "Unavailable revision #{params[:later]}" %></h2>
+<p>This comparison stays tied to these saved revisions, even when a newer draft is saved.</p>
+<nav class="cluster" aria-label="Comparison controls">
+<% if @state == 'changed' %><a href="#change-1" data-comparison-jump>First change</a><% end %>
+<% if @earlier %><a href="<%= example_url('read', revision: @earlier[:id]) %>">Read earlier revision</a><% end %>
+<% if @later %><a href="<%= example_url('read', revision: @later[:id]) %>">Read later revision</a><% end %>
+</nav>
+<p class="hint" data-comparison-status role="status" aria-atomic="true"></p>
+<% if @state == 'changed' %>
+  <% count = @segments.count { |s| s[:kind] == :change }; index = 0 %>
+  <% @segments.each do |segment| %>
+    <% if segment[:kind] == :context %>
+      <section class="comparison-context" data-comparison-context>
+        <h3><%= segment[:lines].length %> unchanged lines · earlier <%= segment[:lines].first[:old] %>–<%= segment[:lines].last[:old] %>, later <%= segment[:lines].first[:later] %>–<%= segment[:lines].last[:later] %></h3>
+        <div class="comparison-scroll" role="region" aria-label="Unchanged source context" tabindex="0"><%= render 'versioned_documents/documents/lines', lines: segment[:lines] %></div>
+      </section>
+    <% else %>
+      <% index += 1; old = segment[:lines].filter_map { |l| l[:old] }; later = segment[:lines].filter_map { |l| l[:later] } %>
+      <section class="comparison-block" aria-labelledby="change-<%= index %>">
+        <header class="comparison-block-header"><h3 id="change-<%= index %>" data-comparison-change tabindex="-1">Change <%= index %> of <%= count %> · earlier <%= old.first %>–<%= old.last %>, later <%= later.first %>–<%= later.last %></h3>
+          <nav class="cluster" aria-label="Change <%= index %> navigation">
+          <% if index > 1 %><a href="#change-<%= index - 1 %>" data-comparison-jump>Previous change</a><% end %>
+          <% if index < count %><a href="#change-<%= index + 1 %>" data-comparison-jump>Next change</a><% end %>
+          </nav>
+        </header>
+        <div class="comparison-scroll" role="region" aria-label="Change <%= index %> source lines" tabindex="0"><%= render 'versioned_documents/documents/lines', lines: segment[:lines] %></div>
+      </section>
+    <% end %>
+  <% end %>
+<% elsif @state == 'identical' %>
+  <p class="notice">No source changes between these saved revisions.</p>
+<% elsif @state == 'first' %>
+  <p class="notice">This is the first saved revision; there is no earlier revision.</p>
+<% else %>
+  <p class="notice" data-tone="error">Comparison unavailable. This does not mean there are no changes. <a href="<%= example_url('compare', earlier: params[:earlier], later: params[:later]) %>">Retry comparison</a></p>
+<% end %>
+<% if @earlier && @later && @state != 'unavailable' %>
+<section class="stack"><h3>Document metadata changes</h3>
+<% if @earlier[:category] == @later[:category] %><p>No document metadata changes.</p><% else %>
+<dl><dt>Category · Earlier</dt><dd><%= @earlier[:category] %></dd><dt>Category · Later</dt><dd><%= @later[:category] %></dd></dl>
+<% end %></section>
+<% end %>
+</section>
+</div>

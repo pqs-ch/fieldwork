@@ -1,0 +1,12 @@
+<header class="page-header"><div class="page-header-content"><h1>Document history</h1><p>Saved editing revisions and named publications are separate records. Several saves can contribute to a publication.</p></div></header>
+<div class="content-surface section-stack">
+<section class="stack"><h2>Published editions</h2><ul class="stack" data-gap="tight">
+<% VersionedDocuments::DocumentExamples::PUBLICATIONS.reverse_each do |publication| %><li><a href="<%= example_url('read', revision: publication[:revision]) %>">Read publication <%= publication[:name] %></a> · from saved revision <%= publication[:revision] %></li><% end %>
+</ul></section>
+<section class="stack"><h2>Saved editing revisions</h2><ol class="stack" data-gap="section" reversed>
+<% @revisions.reverse_each do |revision| %><% position = @revisions.index(revision); previous = position.positive? ? @revisions[position - 1] : nil %>
+<li><div class="stack" data-gap="tight"><p><%= revision_label(revision) %> · <%= revision[:owner] %> · <time datetime="<%= revision[:at] %>"><%= revision[:at] %></time></p><p><%= revision[:summary] %></p><div class="cluster"><a href="<%= example_url('read', revision: revision[:id]) %>">Read revision <%= revision[:id] %></a><a href="<%= example_url('compare', earlier: previous&.dig(:id), later: revision[:id]) %>">View changes for <%= revision[:id] %></a>
+<% unless revision == @draft %><%= button_to 'Restore into draft', example_url('restore', revision: revision[:id]), class: 'button' %><% end %></div></div></li>
+<% end %>
+</ol></section>
+</div>

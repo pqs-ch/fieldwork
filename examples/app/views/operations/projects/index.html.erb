@@ -1,0 +1,43 @@
+<% content_for :title, 'Projects' %>
+<header class="page-header"><div class="page-header-content"><h1>Projects</h1></div><div class="page-header-actions"><a class="button" data-intent="primary" href="<%= new_operations_project_path %>">New project</a></div></header>
+<section class="table-panel" data-data-table aria-label="Project collection">
+<%= form_with url: operations_projects_path, method: :get, data: { table_query: true }, class: 'table-options-form' do |form| %>
+  <div class="table-toolbar">
+    <p class="hint"><% if @query.valid? %><%= @count %> of <%= @all.length %> projects<% else %>Filters need attention<% end %></p>
+    <div data-table-filter-summary hidden></div>
+    <a href="<%= operations_projects_path %>" class="button" data-variant="quiet">Reset view</a>
+  </div>
+  <div class="field"><%= form.label :sort, 'Sort projects' %><%= form.select :sort, Operations::ProjectQuery::SORT_OPTIONS, {selected: @sort}, data: { table_sort: true } %></div>
+  <fieldset class="table-column-fields" id="name-options" data-table-column="name" data-label="Project" data-type="text"><legend>Project</legend>
+    <%= render 'sort_actions' %>
+    <button class="menu-command" type="button" data-reset-filter disabled>Clear filter from “Project”</button>
+    <div class="field"><%= form.label :name_condition, 'Text filters' %><%= form.select :name_condition, Operations::ProjectQuery::TEXT_OPTIONS, {selected: @name_condition}, data: { filter_condition: true } %></div>
+    <div class="field" data-when="equals not-equals starts ends contains not-contains"><%= form.label :name_text, 'Project name' %><%= form.text_field :name_text, value: @name_text, data: { filter_text: true }, aria: {invalid: @query.errors.key?(:name_text), describedby: 'name_text-error'} %><p class="field-error" id="name_text-error" <%= 'hidden' unless @query.errors.key?(:name_text) %>><%= @query.errors[:name_text] %></p></div>
+  </fieldset>
+  <% [['owner','Owner',@owners,@owner_values],['status','Status',@statuses,@status_values]].each do |key, label, choices, selected| %>
+  <fieldset class="table-column-fields" id="<%= key %>-options" data-table-column="<%= key %>" data-label="<%= label %>" data-type="values"><legend><%= label %></legend>
+    <%= render 'sort_actions' %>
+    <button class="menu-command" type="button" data-reset-filter disabled>Clear filter from “<%= label %>”</button>
+    <div class="field"><%= label_tag "#{key}-search", "Search #{label.downcase} values", class: 'visually-hidden' %><%= search_field_tag nil, nil, id: "#{key}-search", placeholder: 'Search', disabled: true, data: { value_search: true } %></div>
+    <%= hidden_field_tag "#{key}_values_present", '1' %>
+    <label class="check filter-all"><input type="checkbox" data-select-values disabled <%= 'checked' if choices.all? { |v| selected.include?(v) } %>><span data-select-values-label>Select all</span></label>
+    <div class="filter-values"><% choices.each do |value| %><label class="check"><%= check_box_tag "#{key}_values[]", value, selected.include?(value), id: nil, data: { filter_value: true, label: value } %><%= value %></label><% end %></div>
+    <p class="hint" data-value-count role="status"></p><p class="hint" data-values-empty hidden>No matching values</p>
+  </fieldset>
+  <% end %>
+  <%= render 'number_filter', form: form %>
+  <%= render 'date_filter', form: form %>
+  <% unless @query.valid? %><div class="table-feedback" data-tone="error" role="alert"><p>Filters could not be applied. Correct the highlighted fields.</p><ul><% @query.errors.each do |field, message| %><li><a href="#<%= field %>"><%= field.to_s.humanize %>: <%= message %></a></li><% end %></ul></div><% end %>
+  <button class="button" type="submit" data-table-submit>Apply filters</button>
+  <div class="table-scroll" data-table-results role="region" aria-label="Project results" tabindex="0">
+    <% columns = [['name','Project',40],['owner','Owner',18],['status','Status',14],['due_on','Due date',14],['budget','Budget',14]] %>
+    <table class="data-table"><caption class="visually-hidden">Projects with owner, status, delivery date and budget</caption>
+    <colgroup><% columns.each do |_, _, width| %><col style="width: <%= width %>%"><% end %></colgroup>
+    <thead><tr><% columns.each do |key,label,_| %><th scope="col" data-wrap="<%= key == 'name' ? 'wrap' : 'nowrap' %>"<%= ' data-align=number' if key == 'budget' %><% if @sort.start_with?("#{key}:") %> aria-sort="<%= @sort.split(':').last %>"<% end %>><%= render 'trigger', key: key, label: label %></th><% end %></tr></thead>
+    <tbody><% @rows.each do |row| %><tr><td data-wrap="wrap"><a href="<%= operations_project_path(row[:id]) %>"><%= row[:name] %></a></td><td data-wrap="nowrap"><%= row[:owner] %></td><td data-wrap="nowrap"><span class="status-indicator" data-tone="<%= status_tone(row[:status]) %>"><%= row[:status] %></span></td><td data-wrap="nowrap"><time datetime="<%= row[:due_on] %>"><%= Date.iso8601(row[:due_on]).strftime('%d %b %Y') %></time></td><td data-align="number" data-wrap="nowrap"><%= money(row[:budget]) %></td></tr><% end %></tbody>
+    </table>
+    <% if !@query.valid? %><p class="table-empty hint">Results are unavailable until the filters are corrected.</p><% elsif @rows.empty? %><div class="table-empty stack"><h2>No projects match these filters</h2><p class="hint">Try changing a column filter or reset the view.</p><a href="<%= operations_projects_path %>">Clear filters</a></div><% end %>
+  </div>
+  <% if @query.valid? %><footer class="table-footer"><p>Showing <%= @count.zero? ? 0 : (@page - 1) * 6 + 1 %>–<%= [@page * 6,@count].min %> of <%= @count %></p><nav class="pagination" aria-label="Project result pages"><% if @page > 1 %><a href="<%= query_url(page: @page - 1) %>">Previous</a><% else %><span aria-disabled="true">Previous</span><% end %><span>Page <%= @page %> of <%= [(@count / 6.0).ceil,1].max %></span><% if @page * 6 < @count %><a href="<%= query_url(page: @page + 1) %>">Next</a><% else %><span aria-disabled="true">Next</span><% end %></nav></footer><% end %>
+<% end %>
+</section>

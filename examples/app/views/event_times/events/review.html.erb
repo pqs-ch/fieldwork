@@ -1,0 +1,9 @@
+<% content_for :title, 'Review event' %>
+<header class="page-header"><div class="page-header-content"><div class="page-header-title"><h1>Review event</h1></div><p class="page-header-description"><%= @record[:subject] %></p></div></header>
+<%= form_with url: event_times_events_path, class: 'content-surface stack', id: 'confirm-event' do %>
+  <%= hidden_field_tag :attempt, @attempt %><%= hidden_field_tag :revision, @draft[:revision] %>
+  <% if @error %><p class="notice" data-tone="error" role="status" tabindex="-1" id="event-result"><%= @error %></p><% end %>
+  <div class="section-stack"><%= render 'times' %></div>
+  <p class="hint">Recording creates the event record. Follow-up remains a separate task.</p>
+  <div class="form-actions"><%= link_to 'Revise details', new_event_times_event_path(attempt: @attempt), class: 'button' %><%= button_tag 'Record event', class: 'button', data: {intent: 'primary', turbo_submits_with: 'Recording…'} %></div>
+<% end %>

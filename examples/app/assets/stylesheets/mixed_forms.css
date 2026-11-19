@@ -1,0 +1,2 @@
+.project-brief-page { --width-page: 60rem; }
+.project-brief-page .repeatable-item-fields > noscript { align-self: start; margin-block-start: calc(var(--text-label) * 1.55 + var(--space-2)); }

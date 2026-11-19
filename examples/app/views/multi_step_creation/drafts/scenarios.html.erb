@@ -1,0 +1,9 @@
+<% content_for :title, 'Review request scenarios' %>
+<header class="page-header"><div class="page-header-content"><h1>Review request scenarios</h1><p class="page-header-description"><%= @draft[:values]['supplier'] %></p></div></header>
+<section class="content-surface stack" aria-labelledby="creation-failure-title">
+  <h2 id="creation-failure-title">Temporary creation failure</h2>
+  <p>The next creation attempt will fail once. The reviewed draft remains available for retry; repeated confirmation returns the same request.</p>
+  <%= form_with url: scenario_multi_step_creation_draft_path(@draft[:id]), local: true do %>
+    <div class="form-actions"><%= link_to 'Return to request check', review_multi_step_creation_draft_path(@draft[:id]), class: 'button' %><%= button_tag 'Fail next creation once', class: 'button' %></div>
+  <% end %>
+</section>

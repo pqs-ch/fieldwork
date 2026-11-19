@@ -1,0 +1,15 @@
+<%= hidden_field_tag :transport, params[:transport], id: nil %>
+<%= hidden_field_tag :mode, params[:mode], id: nil %>
+<% ['title', 'owner_id'].each do |field| %>
+  <%= hidden_field_tag "project[#{field}]", @draft[field], id: nil %>
+<% end %>
+<%= hidden_field_tag 'project[dates_required]', @draft['dates_required'] ? '1' : '0', id: nil %>
+<%= hidden_field_tag 'project[reviewer_ids][]', '', id: nil %>
+<% @draft['reviewer_ids'].each do |id| %><%= hidden_field_tag 'project[reviewer_ids][]', id, id: nil %><% end %>
+<% @draft['deliverables'].each do |key, row| %>
+  <% ['title', 'due_on'].each do |field| %><%= hidden_field_tag "project[deliverables][#{key}][#{field}]", row[field], id: nil %><% end %>
+<% end %>
+<% @previous_files.each do |file| %>
+  <%= hidden_field_tag 'previous_files[][name]', file['name'], id: nil %>
+  <%= hidden_field_tag 'previous_files[][description]', file['description'], id: nil %>
+<% end %>

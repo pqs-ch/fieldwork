@@ -1,0 +1,127 @@
+<% content_for :title, @review[:title]
+   inputs = @review[:inputs]
+   counts = review_counts
+   pending = (inputs || []).reject { |input| ready?(input) } %>
+<header class="page-header">
+  <div class="page-header-content">
+    <div class="page-header-title">
+      <h1><%= @review[:title] %></h1>
+      <span class="status-indicator" data-tone="<%= 'success' if @review[:completed_at] %>"><%= review_status(@review) %></span>
+    </div>
+    <p class="page-header-description"><%= @review[:scope] %>.</p>
+    <ul class="page-header-meta"><li>Reviewer: Alex Morgan</li><% if inputs %><li><%= pluralize(inputs.size, 'account') %> captured <%= timestamp(@review[:captured_at]) %></li><% end %></ul>
+  </div>
+  <% if inputs && !@review[:completed_at] %>
+    <div class="page-header-actions">
+      <% if pending.any? %>
+        <%= link_to 'Continue review', next_path(pending.first), class: 'button', data: { intent: 'primary' } %>
+      <% else %>
+        <%= link_to 'Complete review', completion_population_review_review_path(@review[:id], view: @view), class: 'button', data: { intent: 'primary' } %>
+      <% end %>
+    </div>
+  <% end %>
+</header>
+
+<div class="content-surface section-stack">
+<% unless inputs %>
+  <section class="stack" aria-labelledby="scope-heading">
+    <h2 id="scope-heading">Capture review scope</h2>
+    <p>Start review captures the accounts currently in scope. Later additions belong to a future review. Save assessments individually and return to finish later.</p>
+    <div class="cluster"><%= button_to 'Start review', start_population_review_review_path(@review[:id]), class: 'button', data: { intent: 'primary' } %></div>
+  </section>
+<% else %>
+    <% if @review[:completed_at] %>
+      <section class="stack" aria-labelledby="review-conclusion-heading">
+        <h2 id="review-conclusion-heading">Review conclusion</h2>
+        <p class="review-prose"><%= @review[:conclusion] %></p>
+        <p class="hint">Completed <%= timestamp(@review[:completed_at]) %>. Recorded assessments remain unchanged. Open findings keep their own follow-up.</p>
+      </section>
+    <% elsif inputs.empty? %>
+      <section class="stack"><h2>No accounts captured</h2><p>Check independent operating evidence before concluding that no accounts are in scope.</p></section>
+    <% end %>
+
+  <% if inputs.any? %>
+    <section class="stack" aria-labelledby="population-heading">
+      <header class="split"><h2 id="population-heading">Accounts in this review</h2><%= render 'summary' %></header>
+      <nav class="section-navigation review-views" aria-label="Review views">
+        <ul>
+          <% PopulationReview::PopulationReviews::VIEWS.each do |value, label| %>
+            <li><%= link_to population_review_review_path(@review[:id], view: value), aria: { current: @view == value ? 'page' : nil } do %>
+              <span class="section-navigation-label"><%= label %></span>
+              <span class="badge"><%= inputs.count { |input| PopulationReview::PopulationReviews.visible?(@store, @review, input, value) } %><span class="visually-hidden"> accounts</span></span>
+            <% end %></li>
+          <% end %>
+        </ul>
+      </nav>
+      <% if visible_inputs.empty? %>
+        <div class="empty-state">
+          <h3 class="empty-state-title">No accounts in this view</h3>
+          <p class="empty-state-description"><%= @view == 'outstanding' ? 'All accounts have a finished assessment or an explained exclusion.' : @view == 'changed' ? 'No assessments need to be repeated because of changed facts.' : 'Finished assessments and explained exclusions will appear here.' %></p>
+          <div class="empty-state-actions"><%= link_to 'Show all accounts', population_review_review_path(@review[:id], view: 'all'), class: 'button' %></div>
+        </div>
+      <% else %>
+        <div class="table-scroll" role="region" aria-label="Review accounts, scroll horizontally for all columns" tabindex="0">
+          <table class="data-table review-table">
+            <caption class="visually-hidden">Review accounts — <%= PopulationReview::PopulationReviews::VIEWS.fetch(@view) %></caption>
+            <thead><tr><th scope="col" data-wrap="wrap">Account</th><th scope="col" data-wrap="wrap">Assessment</th><th scope="col" data-wrap="nowrap"><span class="visually-hidden">Next action</span></th></tr></thead>
+            <tbody>
+              <% visible_inputs.each do |input|; assessment = PopulationReview::PopulationReviews.latest(input) %>
+                <tr id="subject-<%= input[:id] %>">
+                  <th scope="row" data-wrap="wrap">
+                    <%= link_to input[:captured][:name], population_review_review_input_path(@review[:id], input[:id], view: @view) %>
+                    <p class="hint">Owner at start: <%= input[:captured][:owner] %></p>
+                  </th>
+                  <td data-wrap="wrap">
+                    <div class="stack" data-gap="tight">
+                      <span><span class="<%= input_state(input) == 'Not assessed' ? 'hint' : 'status-indicator' %>" data-tone="<%= state_tone(input) %>"><%= input_state(input) %></span></span>
+                      <% if assessment && assessment[:choice] != 'excluded' %><p class="hint"><%= PopulationReview::PopulationReviews::CHOICES.fetch(assessment[:choice]) %></p><% end %>
+                      <% if ['Changed facts', 'Finding required'].include?(input_state(input)) %><p class="hint"><%= blocker_text(input) %></p><% end %>
+                    </div>
+                  </td>
+                  <td data-wrap="nowrap"><%= link_to input_action(input), input_action_path(input), class: 'button', data: { variant: 'quiet' }, aria: { label: "#{input_action(input)}: #{input[:captured][:name]}" } %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+      <% if @view != 'all' %><p class="hint"><%= visible_inputs.size %> of <%= pluralize(inputs.size, 'account') %> shown</p><% end %>
+    </section>
+  <% end %>
+
+  <% if counts[:findings].positive? %>
+    <section class="stack" aria-labelledby="follow-up-heading">
+      <div class="split"><h2 id="follow-up-heading">Open findings</h2><span class="badge"><%= counts[:findings] %> open</span></div>
+      <p class="hint">Treatment stays open after the review is completed.</p>
+      <ul class="review-findings">
+        <% inputs.each do |input| %>
+          <% input[:findings].each do |finding| %>
+            <li class="stack" data-gap="tight">
+              <%= link_to input[:captured][:name], population_review_review_input_path(@review[:id], input[:id], view: @view, anchor: 'findings') %>
+              <p class="review-prose"><%= finding[:notes] %></p>
+              <p class="hint">Treatment owner: <%= finding[:owner] %></p>
+            </li>
+          <% end %>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+<% end %>
+
+<section class="stack" aria-labelledby="review-guidance-heading">
+  <h2 id="review-guidance-heading">Review guidance</h2>
+  <% if inputs %><p>Later additions are outside the captured review scope.</p><% end %>
+  <p>Review ownership, continued need and safeguards using operating evidence. Explain exclusions. A discrepancy needs a finding with a treatment owner and plan before this review can finish.</p>
+  <p>Check independent operating evidence when no accounts are recorded. An empty register does not establish that none operate within scope.</p>
+</section>
+<% if inputs %>
+  <section class="stack" id="review-activity" aria-labelledby="review-activity-heading">
+    <h2 id="review-activity-heading">Review activity (<%= @review[:events].size %>)</h2>
+    <ol class="change-history" role="list" aria-label="Review activity, newest first">
+      <% @review[:events].each do |event| %>
+        <li><p><strong><%= event[:title] %></strong></p><p class="review-prose"><%= event[:notes] %></p><p class="change-meta"><%= event[:actor] %> · <%= timestamp(event[:at]) %></p></li>
+      <% end %>
+    </ol>
+  </section>
+<% end %>
+</div>

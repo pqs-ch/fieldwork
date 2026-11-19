@@ -1,0 +1,3 @@
+<button type="submit" class="button" data-intent="primary" data-editing-pending-label="Checking draft…" name="intent" value="continue"><%= @return_to_review ? 'Save and return to check' : @step == 'details' ? 'Continue to review scope' : 'Check request' %></button>
+<% if @step == 'scope' && !@return_to_review %><button type="submit" class="button" data-editing-pending-label="Saving draft…" name="intent" value="back" formnovalidate>Save and go back</button><% end %>
+<button type="submit" class="button" data-editing-pending-label="Saving draft…" name="intent" value="leave" formnovalidate>Save and leave</button>

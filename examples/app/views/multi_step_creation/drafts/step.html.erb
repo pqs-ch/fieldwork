@@ -1,0 +1,21 @@
+<% title = @step == 'details' ? 'Supplier details' : 'Review scope'; content_for :title, title %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Review requests', multi_step_creation_requests_path %></li><li><span aria-current="page">Draft</span></li></ol></nav>
+<header class="page-header">
+  <div class="page-header-content"><h1><%= title %></h1><% if @step == 'scope' %><p class="page-header-description"><%= @entry.supplier %></p><% end %></div>
+</header>
+<%= fieldwork_form_with model: @entry, scope: :entry, url: step_path(@step), local: true, mode: :create, id: 'request-step',
+  baseline: @draft[:values].slice(*MultiStepCreation::ReviewRequests::STEP_FIELDS.fetch(@step)),
+  class: 'content-surface', data: { draft_protection: title }, actions: ->(form) { render('actions', form: form) } do |form| %>
+  <%= hidden_field_tag :revision, @draft[:revision] %><%= hidden_field_tag :return_to, @return_to_review ? 'review' : nil %>
+  <% if @step == 'details' %>
+    <%= fieldwork_field form, :supplier, label: 'Supplier name', required: true, maxlength: 80, autocomplete: 'organization' %>
+    <%= fieldwork_select form, :owner, MultiStepCreation::ReviewRequestEntry::OWNERS.map { |id, name| [name, id] }, prompt: 'Choose an owner', label: 'Review owner', required: true %>
+  <% else %>
+    <%= fieldwork_field form, :purpose, type: :textarea, label: 'What should this review cover?', required: true, rows: 6, maxlength: 600, hint: 'Service, risks and decisions to assess. Up to 600 characters.' %>
+    <div class="grid">
+      <%= fieldwork_field form, :due_on, type: :date, label: 'Review due date', required: true %>
+      <%= fieldwork_select form, :approach, [['Internal review', 'internal'], ['Independent assessment', 'independent']], label: 'Assessment approach' %>
+    </div>
+    <div data-assessor-fields><%= fieldwork_field form, :assessor, label: 'Independent assessor', hint: 'Required for an independent assessment. Up to 80 characters.', maxlength: 80 %></div>
+  <% end %>
+<% end %>

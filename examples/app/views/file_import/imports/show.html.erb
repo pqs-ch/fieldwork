@@ -1,0 +1,17 @@
+<% content_for :width, 'wide'; content_for :title, 'Supplier import result'; operation = @batch[:operation]; summary = counts(operation[:results]); failed = summary.fetch('failed', 0); excluded = summary.fetch('excluded', 0) %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Supplier imports', file_import_imports_path %></li><li><span aria-current="page">Import result</span></li></ol></nav>
+<header class="page-header">
+  <div class="page-header-content">
+    <div class="page-header-title"><h1>Supplier import result</h1><span class="status-indicator" data-tone="<%= failed.positive? || excluded.positive? ? 'warning' : 'success' %>"><%= failed.positive? ? 'Needs attention' : excluded.positive? ? 'Completed with exclusions' : 'Completed' %></span></div>
+    <p class="page-header-description"><%= @batch[:filename] %> · <%= pluralize(@batch[:rows].size, 'source row') %> · <%= operation[:policy] == 'valid' ? 'Valid rows only' : 'All or nothing' %></p>
+  </div>
+</header>
+<p role="status" tabindex="-1" data-result><%= pluralize(summary.fetch('imported', 0), 'supplier') %> added. <%= pluralize(failed, 'row') %> unsuccessful. <%= excluded %> excluded; <%= summary.fetch('skipped', 0) %> skipped.</p>
+<div class="cluster">
+  <% if failed.positive? %>
+    <%= form_with url: retry_failed_file_import_import_path(@batch[:id]), local: true do %><%= hidden_field_tag :attempt, operation[:attempt] %><%= button_tag "Retry #{pluralize(failed, 'unsuccessful row')}", class: 'button', data: { intent: 'primary', turbo_submits_with: 'Retrying…' } %><% end %>
+  <% end %>
+  <%= link_to 'View supplier register', file_import_imports_path, class: 'button' %><%= link_to 'Import another CSV', new_file_import_import_path, class: 'button' %>
+</div>
+<% if failed.positive? %><p class="hint"><%= operation[:policy] == 'all' ? 'The batch was rolled back; no suppliers were added.' : 'Successful rows are saved.' %> Retry covers only unsuccessful rows; excluded source errors need a corrected CSV.</p><% end %>
+<%= render 'rows', rows: operation[:results], caption: 'Confirmed row outcomes' %>

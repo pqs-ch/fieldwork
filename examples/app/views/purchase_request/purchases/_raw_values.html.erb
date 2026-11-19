@@ -1,0 +1,8 @@
+<dl class="description-list" data-density="compact">
+  <% PurchaseRequest::PurchaseEntry::FIELDS.each do |field| %>
+    <div>
+      <dt><%= PurchaseRequest::PurchaseEntry::LABELS.fetch(field) %></dt>
+      <dd><%= PurchaseRequest::PurchaseEntry.display(field, values[field]) %></dd>
+    </div>
+  <% end %>
+</dl>

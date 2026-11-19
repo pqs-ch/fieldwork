@@ -1,0 +1,26 @@
+<% content_for :title, 'Compare assessment basis' %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Account reviews', population_review_reviews_path %></li><li><%= link_to @input[:captured][:name], population_review_review_input_path(@review[:id], @input[:id], view: @view) %></li><li><span aria-current="page">Compare basis</span></li></ol></nav>
+<header class="page-header">
+  <div class="page-header-content"><h1>Compare assessment basis</h1><p class="page-header-description"><%= @input[:captured][:name] %> · Assessment <%= @assessment[:number] %> and current account facts and evidence</p></div>
+  <% if @comparison && !@review[:completed_at] %><div class="page-header-actions"><%= link_to 'Reassess account', population_review_review_assessment_path(@review[:id], @input[:id], view: @view), class: 'button', data: {intent: 'primary'} %></div><% end %>
+</header>
+<section class="content-surface" aria-label="Comparison sources">
+  <dl class="description-list grid">
+    <div><dt>Assessed</dt><dd>Assessment <%= @assessment[:number] %> · <%= timestamp(@assessment[:at]) %><p class="hint">Recorded by <%= @assessment[:actor] %>. This side stays fixed.</p></dd></div>
+    <div><dt>Current</dt><dd><% if @comparison %>Read <%= timestamp(@observed_at) %><p class="hint">Values at page load. Reloading reads the latest basis.</p><% else %>Unavailable<p class="hint">Current values could not be read.</p><% end %></dd></div>
+  </dl>
+</section>
+<% unless @comparison %>
+  <section class="empty-state" aria-labelledby="comparison-unavailable"><h2 class="empty-state-title" id="comparison-unavailable">Comparison unavailable</h2><p class="empty-state-description">Current values could not be loaded. The recorded assessment is retained; no comparison result is available.</p><div class="empty-state-actions"><%= link_to 'Retry comparison', comparison_path(@assessment), class: 'button' %><%= link_to 'Back to account', population_review_review_input_path(@review[:id], @input[:id], view: @view), class: 'button' %></div></section>
+<% else %>
+  <% if @review[:completed_at] %><p class="notice">This review is completed. Differences do not change its recorded result.</p><% elsif PopulationReview::PopulationReviews.changed?(@store, @review, @input) %><p class="notice" data-tone="warning">The latest assessment no longer covers the current basis. Check the differences and record a fresh assessment before completing the review.</p><% elsif @assessment[:number] != PopulationReview::PopulationReviews.latest(@input)[:number] %><p class="hint">You are comparing an earlier assessment. The latest recorded assessment determines this account’s review status.</p><% end %>
+  <section class="stack" aria-labelledby="changes-heading">
+    <h2 id="changes-heading"><%= @comparison.changes.empty? ? 'No changes in the compared values' : pluralize(@comparison.changes.size, 'difference') %></h2>
+    <% if @comparison.changes.empty? %><p class="hint">The account facts and evidence shown here match this assessment. This does not establish that every record attribute or requirement is unchanged.</p><% else %><%= render 'comparison_rows', rows: @comparison.changes %><% end %>
+  </section>
+  <% if @comparison.unchanged.any? %>
+    <section class="stack">
+      <h2>Unchanged values (<%= @comparison.unchanged.size %>)</h2><div><%= render 'comparison_rows', rows: @comparison.unchanged %></div></section>
+  <% end %>
+  <div class="cluster"><%= link_to 'Back to account', population_review_review_input_path(@review[:id], @input[:id], view: @view), class: 'button' %></div>
+<% end %>

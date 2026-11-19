@@ -1,0 +1,35 @@
+<% content_for :width, 'wide'; content_for :title, 'Check supplier rows'; summary = counts(@batch[:validation]) %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Supplier imports', file_import_imports_path %></li><li><span aria-current="page">Check rows</span></li></ol></nav>
+<header class="page-header">
+  <div class="page-header-content">
+    <h1>Check supplier rows</h1>
+    <p class="page-header-description"><%= @batch[:filename] %> · <%= pluralize(@batch[:rows].size, 'data row') %></p>
+    <ul class="page-header-meta"><li><%= summary.fetch('ready', 0) %> ready</li><li><%= summary.fetch('invalid', 0) %> need correction</li><li><%= summary.fetch('skipped', 0) %> skipped</li></ul>
+  </div>
+  <div class="page-header-actions"><%= link_to 'Change mapping', mapping_file_import_import_path(@batch[:id]), class: 'button' %><%= link_to 'Upload corrected CSV', new_file_import_import_path, class: 'button' %></div>
+</header>
+<% if @error %><p class="notice" data-tone="error" role="status" tabindex="-1" data-result><%= @error %></p><% end %>
+<% if summary.fetch('invalid', 0).positive? %>
+  <nav class="cluster" aria-label="Rows needing correction" data-row-summary>
+    <span class="hint">Needs correction:</span>
+    <% @batch[:validation].select { |row| row[:state] == 'invalid' }.each do |row| %>
+      <a href="#row-<%= row[:row] %>" aria-label="Row <%= row[:row] %>: <%= row[:message] %>">Row <%= row[:row] %></a>
+    <% end %>
+  </nav>
+<% end %>
+<%= form_with url: execute_file_import_import_path(@batch[:id]), local: true, id: 'confirm-import', class: 'stack' do %>
+  <%= hidden_field_tag :revision, @batch[:revision] %>
+  <div class="import-actions">
+    <div class="field">
+      <label for="import-policy">Rows to import</label>
+      <select id="import-policy" name="policy" aria-describedby="import-policy-hint">
+        <option value="all" <%= 'selected' unless params[:policy] == 'valid' %>>All or nothing</option>
+        <option value="valid" <%= 'selected' if params[:policy] == 'valid' %>>Import valid rows only</option>
+      </select>
+    </div>
+    <%= link_to 'Finish later', file_import_imports_path, class: 'button' %>
+    <%= button_tag "Import #{pluralize(summary.fetch('ready', 0), 'ready row')}", class: 'button', type: 'submit', disabled: summary.fetch('ready', 0).zero?, data: { intent: 'primary', turbo_submits_with: 'Importing…' } %>
+  </div>
+  <p class="hint" id="import-policy-hint">All or nothing adds none if a row needs correction or processing fails. Valid rows only excludes invalid rows and retains other successes. Existing references are skipped.</p>
+<% end %>
+<%= render 'rows', rows: @batch[:validation], caption: 'Validation results · no rows imported yet' %>

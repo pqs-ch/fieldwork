@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : 'Projects' %> · Northstar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <% if controller_name == 'work' %><meta name="turbo-cache-control" content="no-cache"><% end %>
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag 'fieldwork/ui', 'fieldwork/tables', 'data-turbo-track': 'reload' %>
+  <%= javascript_importmap_tags "operations/application" %>
+  <%= stylesheet_link_tag "review", "operations", "data-turbo-track": "reload" %>
+</head>
+<body>
+<%= render "review/navigation" %>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="application-layout operations-layout" data-navigation="top">
+  <div class="application-layout-frame">
+    <header class="application-layout-compact">
+      <a class="brand" href="/operations/projects"><span>Operations</span></a>
+      <div class="stack"><%= render 'operations/layouts/navigation', label: 'Compact workspace', orientation: 'horizontal' %></div>
+    </header>
+    <header class="application-layout-top"><div class="application-layout-top-inner">
+      <a class="brand" href="/operations/projects"><span>Operations</span></a>
+      <%= render 'operations/layouts/navigation', label: 'Workspace', orientation: 'horizontal' %>
+    </div></header>
+    <div class="application-layout-content">
+      <main class="application-layout-main stack" data-gap="section" id="main" tabindex="-1" <%= 'data-work-page' if controller_name == 'work' %>>
+        <% if flash[:notice] %><p class="notice" data-tone="success" role="status" <%= 'data-work-result tabindex=-1' if controller_name == 'work' %>><%= flash[:notice] %></p><% end %>
+        <% if flash[:alert] %><p class="notice" data-tone="error" role="status" data-work-result tabindex="-1"><%= flash[:alert] %></p><% end %>
+        <%= yield %>
+      </main>
+    </div>
+  </div>
+</div>
+</body>
+</html>

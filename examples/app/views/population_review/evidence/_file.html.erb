@@ -1,0 +1,13 @@
+<% current = @store[:evidence][artifact[:id]] %>
+<li class="attachment">
+  <div class="attachment-content">
+    <% if PopulationReview::ReviewEvidence.available?(current) %><%= link_to artifact[:name], download_population_review_evidence_path(artifact[:id]), download: true, data: {turbo: false} %><% else %><strong><%= artifact[:name] %></strong><% end %>
+    <p class="hint"><%= number_to_human_size(artifact[:size]) %> · <%= artifact[:source] %> · Evidence date: <%= evidence_date(artifact) %></p>
+    <% unless PopulationReview::ReviewEvidence.available?(current) %><p class="hint"><%= current&.dig(:withdrawn_at) ? "Original withdrawn: #{current[:withdrawal_reason]}" : 'File unavailable. Its identity and source are retained.' %></p><% end %>
+  </div>
+  <% if local_assigns[:remove_path] %><div class="attachment-actions"><%= link_to 'Remove link', remove_path, class: 'button', data: {variant: 'quiet'}, aria: {label: "Remove link to #{artifact[:name]}"} %></div><% end %>
+  <div class="attachment-details stack" data-gap="tight">
+    <p class="review-prose"><%= purpose %></p>
+    <p class="hint"><%= link_to 'Original and other uses', population_review_evidence_path(artifact[:id]) %></p>
+  </div>
+</li>

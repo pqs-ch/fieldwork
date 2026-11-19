@@ -1,0 +1,12 @@
+<% content_for :title, 'Synthetic review scenarios' %>
+<header class="page-header"><div class="page-header-content"><h1>Synthetic review scenarios</h1><p class="page-header-description">Development controls for this browser’s example workspace. These controls simulate changes and failures; they are separate from the review UI.</p></div></header>
+<%= link_to 'Return to reviews', population_review_reviews_path %>
+<section class="panel stack"><h2>Exercise recovery</h2>
+<%= button_to 'Change backup account owner', population_review_scenarios_path(scenario: 'change'), class: 'button' %><p>Changes current supporting facts. An unfinished review needs reassessment; a completed review keeps its results.</p>
+<%= button_to 'Change account comparison fields', population_review_scenarios_path(scenario: 'comparison_changes'), class: 'button' %><p>Changes owner and operating scope, adds an account identifier and removes the legacy reference. No and 0 remain unchanged so they can be inspected alongside absent values.</p>
+<%= button_to 'Make comparison unavailable', population_review_scenarios_path(scenario: 'comparison_unavailable'), class: 'button' %><%= button_to 'Restore comparison availability', population_review_scenarios_path(scenario: 'comparison_available'), class: 'button' %><p>Simulates a failure to read current comparison values without changing recorded assessments.</p>
+<%= button_to 'Add an account after capture', population_review_scenarios_path(scenario: 'add'), class: 'button' %><p>The register now contains <%= @store[:sources].size %> accounts. Later additions do not enter an already captured review.</p>
+<%= button_to 'Make shared export unavailable', population_review_scenarios_path(scenario: 'evidence_unavailable'), class: 'button' %><p>Retains the shared export’s metadata and references while making its download unavailable. Unfinished assessments need reassessment.</p>
+<%= button_to 'Fail the next valid save', population_review_scenarios_path(scenario: 'failure'), class: 'button' %><p>One assessment, finding or completion submission returns 503 without recording anything. Retry retains the same attempt.</p>
+</section>
+<section class="panel stack"><h2>Reset this example</h2><p>Replaces this browser’s synthetic review workspace. Any open forms will expire.</p><%= button_to 'Reset synthetic reviews', population_review_scenarios_path(scenario: 'reset'), class: 'button' %></section>

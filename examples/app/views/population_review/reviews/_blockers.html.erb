@@ -1,0 +1,20 @@
+<% blockers = (@review[:inputs] || []).reject { |input| ready?(input) } %>
+<% if blockers.any? %>
+  <section aria-labelledby="blockers-heading" class="stack">
+    <h2 id="blockers-heading">Before completing</h2>
+    <p><%= pluralize(blockers.size, 'account') %> still <%= blockers.one? ? 'needs' : 'need' %> attention. Return here after resolving these items.</p>
+    <ul class="checklist" role="list">
+      <% blockers.each do |input| %>
+        <li class="checklist-item" data-state="ready">
+          <span class="checklist-marker" aria-hidden="true"></span>
+          <div class="checklist-content">
+            <h3 class="checklist-title"><%= input[:captured][:name] %></h3>
+            <p class="checklist-state"><%= input_state(input) %></p>
+            <p class="checklist-description"><%= blocker_text(input) %></p>
+          </div>
+          <div class="checklist-actions"><%= link_to input_action(input), next_path(input), class: 'button' %></div>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

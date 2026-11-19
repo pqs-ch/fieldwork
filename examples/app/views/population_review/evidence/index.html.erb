@@ -1,0 +1,5 @@
+<% content_for :title, 'Evidence library' %>
+<header class="page-header"><div class="page-header-content"><h1>Evidence library</h1><p class="page-header-description">Original files that can support more than one account assessment.</p></div></header>
+<ul class="navigation-list" aria-label="Original evidence">
+  <% @store[:evidence].each_value do |file| %><li><%= link_to population_review_evidence_path(file[:id]) do %><span class="navigation-list-content"><span class="navigation-list-title"><%= file[:name] %></span><span class="navigation-list-description"><%= file[:source] %> · Evidence date: <%= evidence_date(file) %></span><span class="navigation-list-description"><%= pluralize(PopulationReview::ReviewEvidence.locations(@store, file[:id]).size, 'account') %> using this original</span></span><% unless PopulationReview::ReviewEvidence.available?(file) %><span class="status-indicator" data-tone="warning"><%= file[:withdrawn_at] ? 'Withdrawn' : 'Unavailable' %></span><% end %><span class="navigation-list-indicator" aria-hidden="true">→</span><% end %></li><% end %>
+</ul>

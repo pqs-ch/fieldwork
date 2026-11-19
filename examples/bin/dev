@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+exec "$(dirname "$0")/rails" server --binding 127.0.0.1 --port "${PORT:-8100}" "$@"

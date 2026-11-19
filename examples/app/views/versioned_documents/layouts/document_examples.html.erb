@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Fieldwork · Versioned document examples</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag "fieldwork/ui", "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags "versioned_documents/application" %>
+  <%= javascript_import_module_tag "versioned_documents/document-examples" %>
+  <%= stylesheet_link_tag "review", "data-turbo-track": "reload" %>
+</head>
+<body>
+<%= render "review/navigation" %>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="page stack" data-width="wide" data-gap="section">
+  <nav class="cluster" aria-label="Document example workflow">
+    <a href="<%= example_url('compare', earlier: 'r2', later: 'r4') %>">Unified comparison</a>
+    <a href="<%= example_url %>">Published document</a>
+    <a href="<%= example_url('edit') %>">Edit draft</a>
+    <a href="<%= example_url('history') %>">History</a>
+  </nav>
+  <main class="stack" data-gap="section" id="main" tabindex="-1">
+    <% if flash[:notice] %><p class="notice" data-tone="success"><%= flash[:notice] %></p><% end %>
+    <%= yield %>
+  </main>
+</div>
+</body>
+</html>

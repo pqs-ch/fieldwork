@@ -1,0 +1,23 @@
+<% if @review_example %>
+  <nav class="review-navigation" aria-label="Example review" data-turbo="false">
+    <a href="/#<%= @review_example.slug %>">All examples</a>
+    <span><%= @review_example.title %></span>
+    <a href="<%= review_example_path(@review_example.slug) %>">Review guide</a>
+    <% if controller_path == 'operations/work' && @state && @query %>
+      <%= link_to 'Review scenarios', work_url_for(destination: :scenarios, page: @page), data: {work_context: true} %>
+    <% end %>
+    <% if controller_path == 'purchase_request/purchases' && @attempt && @draft && @draft[:review] && !@draft[:record_id] %>
+      <%= link_to 'Review scenarios', scenarios_purchase_request_purchases_path(attempt: @attempt, revision: @draft[:revision]) %>
+    <% end %>
+    <% if controller_path == 'file_import/imports' && @batch && @batch[:validation] && !@batch[:operation] %>
+      <%= link_to 'Review scenarios', scenarios_file_import_import_path(@batch[:id]) %>
+    <% end %>
+    <% if controller_path == 'event_times/events' && @attempt && @draft && @draft[:review] && !@draft[:recorded_id] %>
+      <%= link_to 'Review scenarios', event_times_scenarios_path(attempt: @attempt, revision: @draft[:revision]) %>
+    <% end %>
+    <% if controller_path.start_with?('multi_step_creation/') && @step == 'review' && @draft && @draft[:review] && !@draft[:record_id] %>
+      <%= link_to 'Review scenarios', scenarios_multi_step_creation_draft_path(@draft[:id]) %>
+    <% end %>
+    <a href="<%= reset_review_example_path(@review_example.slug) %>">Reset example…</a>
+  </nav>
+<% end %>

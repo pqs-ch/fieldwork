@@ -1,0 +1,9 @@
+<% content_for :title, "Purchase PR-#{@record[:id]}" %>
+<header class="page-header">
+  <div class="page-header-content"><p class="eyebrow">PR-<%= @record[:id] %></p><h1>Purchase request recorded</h1></div>
+</header>
+<p class="notice" data-tone="success" role="status" tabindex="-1" data-result>The request is saved. No order or payment was sent.</p>
+<div class="content-surface stack" data-gap="section">
+  <%= render 'values' %>
+  <div class="form-actions"><%= link_to 'All purchase requests', purchase_request_purchases_path, class: 'button' %><%= link_to 'New purchase request', new_purchase_request_purchase_path, class: 'button' %></div>
+</div>

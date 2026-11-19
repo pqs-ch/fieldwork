@@ -1,0 +1,19 @@
+<div class="grid" data-gap="section">
+<section class="stack" aria-labelledby="event-time-heading">
+  <h2 id="event-time-heading">Event time</h2>
+  <dl class="description-list">
+    <div><dt>Local time</dt><dd><time datetime="<%= @record[:event_at] %>" data-event-time><%= wall_label(@record[:event_local]) %></time><p class="hint"><%= zone_label(@record, 'event') %></p></dd></div>
+    <div><dt>UTC equivalent</dt><dd><time datetime="<%= @record[:event_at] %>" data-event-utc><%= utc_label(@record[:event_at]) %></time></dd></div>
+  </dl>
+</section>
+<section class="stack" aria-labelledby="target-heading">
+  <h2 id="target-heading">Follow-up target</h2>
+  <dl class="description-list">
+    <div><dt>Local time</dt><dd><time datetime="<%= @record[:target_at] %>" data-target-time><%= wall_label(@record[:target_local]) %></time><p class="hint"><%= zone_label(@record, 'target') %></p></dd></div>
+    <div><dt>UTC equivalent</dt><dd><time datetime="<%= @record[:target_at] %>" data-target-utc><%= utc_label(@record[:target_at]) %></time></dd></div>
+  </dl>
+  <p class="hint"><%= @record[:target_hours] %> elapsed hours after the event, including nights and weekends.</p>
+  <% if Time.iso8601(@record[:target_at]) < Time.now.utc %><p><span class="status-indicator" data-tone="warning">Target has passed</span></p><% end %>
+</section>
+</div>
+<dl class="description-list" data-density="compact"><div><dt>Review by</dt><dd><time datetime="<%= @record[:review_on] %>" data-review-date><%= date_label(@record[:review_on]) %></time><p class="hint">Calendar date; no time of day.</p></dd></div></dl>

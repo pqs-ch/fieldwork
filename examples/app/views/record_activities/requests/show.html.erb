@@ -1,0 +1,74 @@
+<% content_for :title, @record[:title] %>
+<% step = RecordActivities::ServiceRequests.next_step(@record) %>
+<% outstanding = RecordActivities::ServiceRequests.outstanding(@record) %>
+<header class="page-header">
+  <div class="page-header-content">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><ol>
+      <li><%= link_to 'Requests', record_activities_requests_path %></li>
+      <li><span aria-current="page">SR-<%= @record[:id] %></span></li>
+    </ol></nav>
+    <div class="page-header-title">
+      <h1><%= @record[:title] %></h1>
+      <span class="status-indicator" <%= 'data-tone=success' if @record[:phase] == 'complete' %>><%= state_label(@record) %></span>
+    </div>
+    <p class="page-header-description">SR-<%= @record[:id] %> · <%= @record[:location] %> · Owned by <%= @record[:owner] %></p>
+  </div>
+  <div class="page-header-actions">
+    <% if step %><%= link_to step[:title], new_record_activities_request_activity_path(@record[:id], kind: step[:kind]), class: 'button', data: {intent: 'primary'} %><% end %>
+    <%= link_to 'Record progress note', new_record_activities_request_activity_path(@record[:id], kind: 'note'), class: 'button' %>
+  </div>
+</header>
+<div class="content-surface">
+  <div class="sidebar-layout" data-divider>
+    <div class="section-stack">
+      <section class="stack" aria-labelledby="details-title">
+        <h2 id="details-title">Reported issue</h2>
+        <p><%= @record[:description] %></p>
+        <p class="hint">Reported by <%= @record[:reporter] %></p>
+      </section>
+      <% %w[assessment order installation].each do |kind| %>
+        <% if (values = @record[kind.to_sym]) %>
+          <%= render 'recorded_activity', kind: kind, values: values %>
+        <% end %>
+      <% end %>
+      <section class="stack" aria-labelledby="activity-title">
+        <h2 id="activity-title">Activity</h2>
+        <ol class="change-history" role="list" aria-label="Request activity, newest first">
+          <% @record[:events].each do |event| %>
+            <li>
+              <p><strong><%= event[:title] %></strong> · <%= event[:actor] %></p>
+              <% if %w[assessment order installation].include?(event[:kind]) %>
+                <p><%= link_to "Read #{event[:kind]}", "##{event[:kind]}-title" %></p>
+              <% else %>
+                <div class="rich-content"><%= simple_format(h(event[:values]['notes'])) %></div>
+              <% end %>
+              <p class="change-meta"><time datetime="<%= event[:at] %>"><%= Time.iso8601(event[:at]).utc.strftime('%-d %b %Y, %H:%M UTC') %></time></p>
+            </li>
+          <% end %>
+        </ol>
+      </section>
+    </div>
+    <aside class="stack" aria-labelledby="outstanding-title">
+      <div class="split">
+        <h2 id="outstanding-title">Outstanding work</h2>
+        <% if outstanding.any? %><span class="badge"><%= outstanding.size %></span><% end %>
+      </div>
+      <% if outstanding.empty? %>
+        <p>Nothing outstanding. Installation and testing are recorded.</p>
+      <% else %>
+        <ul class="checklist" role="list">
+          <% outstanding.each_with_index do |task, index| %>
+            <li class="checklist-item" data-state="<%= index.zero? ? 'ready' : 'blocked' %>">
+              <span class="checklist-marker" aria-hidden="true"></span>
+              <div class="checklist-content">
+                <h3 class="checklist-title"><%= task[:task] %></h3>
+                <p class="checklist-state"><%= index.zero? ? 'Ready' : { 'order' => 'Waiting for assessment', 'installation' => 'Waiting for an order' }.fetch(task[:kind]) %></p>
+                <p class="checklist-description"><%= task[:description] %></p>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </aside>
+  </div>
+</div>

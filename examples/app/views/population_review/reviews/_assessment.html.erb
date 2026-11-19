@@ -1,0 +1,16 @@
+<article class="stack" id="assessment-<%= assessment[:number] %>">
+  <div class="split">
+    <h3><%= PopulationReview::PopulationReviews::CHOICES.fetch(assessment[:choice]) %></h3>
+    <p class="hint">Assessed by <%= assessment[:actor] %> · <%= timestamp(assessment[:at]) %></p>
+  </div>
+  <p class="review-prose"><%= assessment[:notes] %></p>
+  <dl class="description-list grid">
+    <div><dt>Owner assessed</dt><dd><%= assessment[:facts][:owner] %></dd></div>
+    <div><dt>Scope assessed</dt><dd class="review-prose"><%= assessment[:facts][:scope] %></dd></div>
+  </dl>
+  <% if assessment.fetch(:evidence, []).any? %>
+    <section class="stack">
+      <h4>Evidence used (<%= assessment[:evidence].size %>)</h4><div><ul class="attachment-list" aria-label="Evidence recorded with this assessment"><% assessment[:evidence].each do |reference| %><%= render 'population_review/evidence/file', artifact: reference[:artifact], purpose: reference[:purpose] %><% end %></ul></div></section>
+  <% end %>
+  <p><%= link_to 'Compare with current', comparison_path(assessment), aria: {label: "Compare assessment #{assessment[:number]} with current"} %></p>
+</article>

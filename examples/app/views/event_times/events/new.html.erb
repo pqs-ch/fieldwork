@@ -1,0 +1,25 @@
+<% content_for :title, 'Record an event' %>
+<header class="page-header"><div class="page-header-content"><div class="page-header-title"><h1>Record an event</h1></div></div></header>
+<%= fieldwork_form_with model: @entry, url: preview_event_times_events_path, mode: :create, baseline: @baseline, error: @error, id: 'event-entry', actions: ->(_form) { button_tag 'Review event', class: 'button', disabled: @expired, data: {intent: 'primary'} }, pending_label: 'Resolving event time…', class: 'content-surface', cancel: event_times_events_path, data: {draft_protection: 'Event details'} do |form| %>
+  <%= hidden_field_tag :attempt, @attempt %>
+  <% if @error %><p><%= link_to 'Start a fresh event (new tab)', new_event_times_event_path, target: '_blank', rel: 'noopener' %>. The values on this page remain available for reference.</p><% end %>
+    <%= fieldwork_field form, :subject, label: 'Event', required: true, maxlength: 200 %>
+    <div class="grid">
+      <%= fieldwork_field form, :local_time, type: :datetime_local, label: 'Event local time', required: true, step: 60, hint: 'When the event occurred, in the selected timezone.' %>
+      <%= fieldwork_select form, :timezone, EventTimes::EventEntry::ZONES.map { |value, label| [label, value] }, label: 'Event timezone', required: true, hint: 'Changing timezone keeps the entered clock time.' %>
+    </div>
+    <% if @entry.candidates&.size.to_i > 1 %>
+      <fieldset class="stack" data-gap="tight" data-occurrence-group data-local-time="<%= @entry.local_time %>" data-timezone="<%= @entry.timezone %>">
+        <legend>Which occurrence?</legend>
+        <p class="hint"><%= wall_label(@entry.local_time) %> occurs twice in <%= @entry.timezone %>. Use the occurrence supported by the event’s source.</p>
+        <%= form.hidden_field :occurrence_basis, value: @entry.resolution_basis %>
+        <% @entry.candidates.each_with_index do |candidate, index| %>
+          <label class="check"><%= form.radio_button :occurrence, candidate[:offset].to_s, required: true, aria: {invalid: @entry.errors[:occurrence].any?, describedby: 'occurrence-error'} %><span><strong><%= index.zero? ? 'First occurrence' : 'Second occurrence' %></strong> · <%= EventTimes::EventEntry.offset_label(candidate[:offset]) %> (<%= candidate[:abbreviation] %>)<br><span class="hint"><%= utc_label(candidate[:utc].iso8601) %></span></span></label>
+        <% end %>
+        <p class="field-error" id="occurrence-error" data-field-error-for="event_entry_occurrence_<%= @entry.candidates.first[:offset] %>" <%= 'hidden' if @entry.errors[:occurrence].empty? %>><%= @entry.errors.full_messages_for(:occurrence).join('. ') %></p>
+      </fieldset>
+      <p class="hint" role="status" data-occurrence-status></p>
+    <% end %>
+    <div class="event-review-date"><%= fieldwork_field form, :review_on, type: :date, label: 'Review by', required: true, hint: 'Calendar date for reviewing the record; no time of day.' %></div>
+    <p class="hint">Follow-up target: <strong>4 elapsed hours after the event</strong>, including nights and weekends. Check the resolved times before recording.</p>
+<% end %>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= @example&.title || 'Examples' %> · Fieldwork</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag 'fieldwork/ui', 'fieldwork/tables', 'review', 'data-turbo-track': 'reload' %>
+  <%= javascript_importmap_tags 'review' %>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="review-masthead">
+  <a class="brand" href="/"><span>Fieldwork examples</span></a>
+  <% if @example %><a href="/#<%= @example.slug %>">All examples</a><% end %>
+</header>
+<main class="page stack" data-width="<%= action_name == 'show' ? 'default' : 'wide' %>" data-gap="section" id="main" tabindex="-1">
+  <% if flash[:notice] %><p class="notice" data-tone="success" role="status"><%= flash[:notice] %></p><% end %>
+  <% if flash[:clear_reminder] %>
+    <p class="hint" data-reset-reminder>Server data was reset. The saved reminder remains in this browser until browser storage can be cleared.</p>
+  <% end %>
+  <%= yield %>
+</main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head>
+<title>Draft protection · Fieldwork</title><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="turbo-cache-control" content="no-cache"><%= csrf_meta_tags %>
+<%= stylesheet_link_tag "fieldwork/ui", "fieldwork/tables", "draft_protection", "data-turbo-track": "reload" %>
+<%= javascript_importmap_tags "draft_protection/application" %>
+  <%= stylesheet_link_tag "review", "data-turbo-track": "reload" %>
+</head><body>
+<%= render "review/navigation" %><a class="skip-link" href="#main">Skip to content</a>
+<main id="main" class="page draft-workbench-page stack" data-gap="section" tabindex="-1"><%= yield %></main>
+</body></html>

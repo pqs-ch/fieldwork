@@ -1,0 +1,8 @@
+<% values = local_assigns.fetch(:values) %>
+<% if @step == 'scope' %><div class="rich-content"><%= simple_format(h(values['purpose'].presence || 'Not entered')) %></div><% end %>
+<dl class="description-list" data-density="compact">
+  <% MultiStepCreation::ReviewRequests::STEP_FIELDS.fetch(@step).each do |field| %>
+    <% next if field == 'purpose' || (field == 'assessor' && values['approach'] != 'independent') %>
+    <div><dt><%= MultiStepCreation::ReviewRequestEntry::LABELS.fetch(field) %></dt><dd><%= MultiStepCreation::ReviewRequestEntry.display(field, values[field]) %></dd></div>
+  <% end %>
+</dl>

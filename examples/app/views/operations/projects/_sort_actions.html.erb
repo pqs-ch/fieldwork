@@ -1,0 +1,5 @@
+<div class="menu-sort">
+  <button class="menu-command" type="button" data-sort-direction="ascending" disabled><%= local_assigns.fetch(:ascending, 'Sort A to Z') %></button>
+  <button class="menu-command" type="button" data-sort-direction="descending" disabled><%= local_assigns.fetch(:descending, 'Sort Z to A') %></button>
+  <button class="menu-command" type="button" data-sort-direction="none" disabled>Clear sort</button>
+</div>

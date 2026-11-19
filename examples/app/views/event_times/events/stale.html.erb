@@ -1,0 +1,4 @@
+<% content_for :title, 'Review details again' %>
+<header class="page-header"><div class="page-header-content"><h1>Review details again</h1><p class="page-header-description">This confirmation is out of date or its draft is unavailable. No event was recorded by this request.</p></div></header>
+<% if @draft %><p>The latest entered details are retained. Review them before confirming the event.</p><div class="cluster"><% if @draft[:review] %><%= link_to 'Review latest details', review_event_times_events_path(attempt: @attempt, revision: @draft[:revision]), class: 'button', data: {intent: 'primary'} %><% else %><%= link_to 'Revise latest details', new_event_times_event_path(attempt: @attempt), class: 'button', data: {intent: 'primary'} %><% end %></div><% else %><%= link_to 'Start a new event', new_event_times_event_path, class: 'button' %><% end %>
+<%= link_to 'Back to event records', event_times_events_path %>

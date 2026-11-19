@@ -1,0 +1,14 @@
+<header class="page-header">
+  <div class="page-header-content">
+    <div class="page-header-title"><h1>Reset <%= @example.title.downcase %>?</h1></div>
+    <p class="page-header-description">Saved changes and failure scenarios for this example will return to their starting state. Other examples keep their data.</p>
+  </div>
+</header>
+<%= form_with url: reset_review_example_path(@example.slug), method: :post, local: true, class: 'content-surface stack' do %>
+  <% if @example.shared %><p>Shared records in this example reset for everyone using this local server. Open forms may need to be reopened.</p><% else %><p>This resets this example’s saved work in your browser session. Open forms may need to be reopened.</p><% end %>
+  <% if @example.slug == 'draft-protection' %><p>The personal reminder stored in this browser will also be cleared when JavaScript is available.</p><% end %>
+  <div class="cluster">
+    <%= submit_tag 'Reset example', class: 'button', data: {intent: 'danger', disable_with: 'Resetting…'} %>
+    <%= link_to 'Cancel', review_example_path(@example.slug), class: 'button', data: {variant: 'quiet'} %>
+  </div>
+<% end %>

@@ -1,0 +1,52 @@
+<header class="page-header"><div class="page-header-content"><div class="page-header-title"><h1>Project brief</h1></div></div><div class="page-header-actions"><a href="/draft-protection/workspace">Workspace</a></div></header>
+<div class="content-surface section-stack">
+<turbo-frame id="brief-editor">
+<section class="stack" aria-labelledby="brief-heading"><h2 id="brief-heading">Brief details</h2>
+<% if @reselect %><p class="notice" role="status">Your text is retained. Choose your files again.</p><% end %>
+<%= fieldwork_form_with url: '/draft-protection/brief', id: 'brief', composition: :mixed, multipart: true, local: true, mode: :edit,
+  baseline: @baseline, actions_position: :start, actions: ->(_form) { render 'actions' },
+  error: @error, message: flash[:notice], data: { draft_protection: 'Project brief', transport: params[:transport], turbo: params[:drive] == 'off' ? false : nil } do %>
+  <%= hidden_field_tag :transport, params[:transport] %>
+  <%= hidden_field_tag :drive, params[:drive] %>
+  <div class="field"><label for="title">Project name</label><input id="title" name="title" value="<%= @title %>" required></div>
+  <div class="field"><label for="notes">Scope and outcome</label><textarea id="notes" name="notes" rows="5"><%= @notes %></textarea></div>
+  <div class="file-selection stack" data-file-selection>
+    <div class="file-dropzone" data-file-dropzone data-density="compact"><label for="files">Supporting files (optional)</label><p class="hint" id="files-hint">Choose files<span data-file-enhanced-hint hidden> or drop them here</span>. Files are sent when you save and are not stored in this example.</p><input id="files" name="files[]" type="file" multiple aria-describedby="files-hint"></div>
+    <p class="hint" data-file-empty>No new files selected.</p><ul class="file-selection-list" data-file-list aria-label="Selected files" hidden></ul>
+    <template data-file-template><li class="file-selection-item" data-file-item><div class="file-selection-item-header"><div><strong data-file-name></strong><p class="hint" data-file-size></p></div><button class="button" type="button" data-file-remove disabled>Remove</button></div></li></template>
+    <p class="hint" data-file-status role="status"></p>
+  </div>
+<% end %>
+<p class="hint" data-upload-result role="status"><%= flash[:upload_result] %></p>
+<section class="stack" aria-labelledby="review-controls-heading">
+  <h3 id="review-controls-heading">Review controls</h3>
+  <p class="hint">Test this example’s save and navigation states. These choices do not change the brief.</p>
+  <div class="field"><label for="scenario">Next save</label><select id="scenario" name="scenario" form="brief"><%= options_for_select([['Save normally', 'ok'], ['Service failure', 'fail'], ['Slow save', 'slow']], params[:scenario].presence || 'ok') %></select></div>
+  <nav class="cluster" aria-label="Brief views"><%= link_to 'Reload brief', draft_protection_workbench_path(view: 'review', transport: params[:transport].presence, drive: params[:drive].presence), data: {turbo_frame: 'brief-editor'} %><%= link_to 'Load latest brief slowly', draft_protection_workbench_path(slow: 1, transport: params[:transport].presence, drive: params[:drive].presence), data: {turbo_frame: 'brief-editor'} %></nav>
+</section>
+</section></turbo-frame>
+<div class="grid">
+  <section class="stack" aria-labelledby="reminder-heading" data-browser-reminder hidden>
+    <h2 id="reminder-heading">Personal reminder</h2>
+    <p class="hint">Private to this browser; saved separately from the brief.</p>
+    <%= fieldwork_form_with url: '/draft-protection/workspace', method: :get, id: 'reminder', mode: :edit, submit_label: 'Save reminder in this browser', data: { draft_protection: 'Personal reminder', draft_submit: 'in-place' } do %>
+      <div class="field"><label for="reminder-text">Reminder</label><textarea id="reminder-text" name="reminder" rows="2"></textarea></div>
+    <% end %>
+    <p id="reminder-status" class="hint" role="status"></p>
+  </section>
+  <turbo-frame id="reference">
+    <section class="stack" aria-labelledby="brief-guidance-heading">
+      <h2 id="brief-guidance-heading">Brief guidance</h2>
+      <p>Identify the owner, intended outcome and supporting material.</p>
+      <p><a href="/draft-protection/reference">Read brief guidance</a></p>
+    </section>
+  </turbo-frame>
+  <section class="stack" aria-labelledby="project-search-heading">
+    <h2 id="project-search-heading">Find another project</h2>
+    <form class="stack" action="/draft-protection/workspace" method="get" data-turbo-frame="_top">
+      <div class="field"><label for="search">Search by project name</label><input id="search" name="q" type="search"></div>
+      <button class="button" type="submit">Search projects</button>
+    </form>
+  </section>
+</div>
+</div>

@@ -1,0 +1,49 @@
+<% content_for :title, @input[:captured][:name]; assessment = PopulationReview::PopulationReviews.latest(@input); earlier = @input[:assessments][0...-1] %>
+<header class="page-header">
+  <div class="page-header-content">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Account reviews', population_review_reviews_path %></li><li><%= link_to @review[:title], review_back_path %></li><li><span aria-current="page">Account assessment</span></li></ol></nav>
+    <div class="page-header-title"><h1><%= @input[:captured][:name] %></h1><span class="status-indicator" data-tone="<%= state_tone(@input) %>"><%= input_state(@input) %></span></div>
+    <% if @review[:completed_at] %><p class="page-header-description">Recorded result from a completed review.</p><% end %>
+  </div>
+  <% unless @review[:completed_at] %>
+    <div class="page-header-actions"><%= link_to ready?(@input) ? 'Record new assessment' : input_action(@input), next_path(@input), class: 'button', data: { intent: ready?(@input) ? nil : 'primary' } %></div>
+  <% end %>
+</header>
+<% if PopulationReview::PopulationReviews.changed?(@store, @review, @input) %><p class="notice" data-tone="warning">Account facts or supporting evidence changed. Reassess the current basis before completing this review. The earlier assessment below is retained. <%= link_to 'Compare assessed and current values', comparison_path(assessment) %>.</p><% end %>
+<div class="content-surface section-stack">
+<section class="stack" aria-labelledby="assessment-heading">
+  <h2 id="assessment-heading">Latest assessment</h2>
+  <% if assessment %>
+    <%= render 'assessment', assessment: assessment %>
+  <% else %>
+    <p>No assessment recorded yet. Check the account and record a conclusion to continue.</p>
+  <% end %>
+</section>
+<%= render 'evidence' %>
+<section class="stack" id="findings" aria-labelledby="findings-heading">
+  <h2 id="findings-heading">Findings and treatment</h2>
+  <% if @input[:findings].empty? %>
+    <p class="hint"><%= PopulationReview::PopulationReviews.finding_needed?(@input) ? 'The discrepancy still needs a finding, treatment owner and plan.' : 'No findings recorded for this account.' %></p>
+  <% else %>
+    <% @input[:findings].each do |finding| %>
+      <article class="stack">
+        <div class="split"><h3>Open finding</h3><span class="status-indicator" data-tone="warning">Treatment open</span></div>
+        <p class="review-prose"><%= finding[:notes] %></p>
+        <dl class="description-list grid"><div><dt>Treatment owner</dt><dd><%= finding[:owner] %></dd></div><div><dt>Recorded by</dt><dd><%= finding[:actor] %> · <%= timestamp(finding[:at]) %></dd></div></dl>
+        <p class="hint">Linked to assessment <%= finding[:assessment] %>. Treatment remains open independently of the review outcome.</p>
+      </article>
+    <% end %>
+  <% end %>
+</section>
+<% if earlier.any? %>
+  <section class="stack" aria-labelledby="earlier-assessments-heading">
+    <h2 id="earlier-assessments-heading">Earlier assessments (<%= earlier.size %>)</h2>
+    <div class="section-stack"><% earlier.reverse.each do |previous| %><%= render 'assessment', assessment: previous %><% end %></div>
+  </section>
+<% end %>
+<section class="stack" aria-labelledby="captured-facts-heading">
+  <h2 id="captured-facts-heading">Account facts at review start</h2>
+  <dl class="description-list"><div><dt>Owner at start</dt><dd><%= @input[:captured][:owner] %></dd></div><div><dt>Operating scope</dt><dd class="review-prose"><%= @input[:captured][:scope] %></dd></div><div><dt>Captured</dt><dd><%= timestamp(@review[:captured_at]) %></dd></div></dl>
+</section>
+<div class="cluster"><%= link_to 'Back to review', review_back_path, class: 'button' %></div>
+</div>

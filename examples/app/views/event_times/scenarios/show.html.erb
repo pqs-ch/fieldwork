@@ -1,0 +1,10 @@
+<% content_for :title, 'Event review scenarios' %>
+<header class="page-header"><div class="page-header-content"><div class="page-header-title"><h1>Event review scenarios</h1></div></div></header>
+<section class="content-surface stack" aria-labelledby="recording-failure-title">
+  <h2 id="recording-failure-title">Temporary recording failure</h2>
+  <p>The next recording in this browser workspace will fail once. Nothing is recorded on failure; the reviewed details remain available for retry.</p>
+  <%= form_with url: event_times_scenarios_path, local: true do %>
+    <%= hidden_field_tag :scenario, 'failure' %><%= hidden_field_tag :attempt, params[:attempt] %><%= hidden_field_tag :revision, params[:revision] %>
+    <div class="form-actions"><%= link_to @return_to ? 'Return to review' : 'Return to event records', @return_to || event_times_events_path, class: 'button' %><%= button_tag 'Fail the next recording', class: 'button' %></div>
+  <% end %>
+</section>

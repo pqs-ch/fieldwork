@@ -1,0 +1,43 @@
+<div class="table-scroll" data-table-results role="region" aria-label="Work tasks, scroll horizontally if needed" tabindex="0">
+  <table class="data-table" data-table-columns>
+    <caption class="visually-hidden">Work tasks with owner, state, due date and type</caption>
+    <thead>
+      <tr>
+        <% @columns.each do |column| %>
+          <% key = column['key']; label = Operations::WorkQueue::COLUMNS.fetch(key).first %>
+          <th scope="col" data-table-cell="<%= key %>" data-table-width="<%= column['width'] %>" style="width: <%= column['width'] %>px"
+              data-wrap="<%= key == 'name' ? 'wrap' : 'nowrap' %>"
+              <%= 'data-table-required' if key == 'name' %> <%= 'hidden' unless column['visible'] %>
+              <% if @query.sort.start_with?("#{key}:") %>aria-sort="<%= @query.sort.split(':').last %>"<% end %>>
+            <%= render 'operations/projects/trigger', key: key, label: label %>
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <tr>
+          <% @columns.each do |column| %>
+            <% key = column['key'] %>
+            <td data-table-cell="<%= key %>" data-wrap="<%= key == 'name' ? 'wrap' : 'nowrap' %>" <%= 'hidden' unless column['visible'] %>>
+              <% if key == 'name' %>
+                <%= link_to row[:name], operations_work_task_path(row[:id], back: work_url_for(page: @page)), data: {work_task: true} %>
+              <% elsif key == 'status' %>
+                <span class="status-indicator" data-tone="<%= task_tone(row[:status]) %>"><%= row[:status] %></span>
+              <% elsif key == 'due_on' %>
+                <time datetime="<%= row[:due_on] %>"><%= Date.iso8601(row[:due_on]).strftime('%d %b %Y') %></time>
+              <% else %>
+                <%= row[key.to_sym] %>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @rows.empty? %>
+    <p class="table-empty hint"><%= @query.valid? && !@layout_invalid ?
+      'No tasks match the applied filters. Change a column filter or reset to the saved view.' :
+      'Results are unavailable until the filters are corrected.' %></p>
+  <% end %>
+</div>

@@ -1,0 +1,25 @@
+<fieldset class="table-column-fields" id="due-options" data-table-column="due_on" data-label="Due date" data-type="date">
+  <legend>Due date</legend>
+  <%= render 'operations/projects/sort_actions', ascending: 'Sort oldest to newest', descending: 'Sort newest to oldest' %>
+  <button class="menu-command" type="button" data-reset-filter disabled>Clear filter from “Due date”</button>
+  <div class="field">
+    <%= form.label :due_condition, 'Date filters' %>
+    <%= form.select :due_condition, Operations::ProjectQuery::DATE_OPTIONS, {selected: @query.due_condition}, data: {filter_condition: true} %>
+  </div>
+  <div class="field" data-when="equals before after between">
+    <%= form.label :due_date, 'Date' %>
+    <%= form.date_field :due_date, value: @query.due_date, data: {filter_date: true}, aria: {invalid: @query.errors.key?(:due_date), describedby: 'due_date-error'} %>
+    <p class="field-error" id="due_date-error" <%= 'hidden' unless @query.errors.key?(:due_date) %>><%= @query.errors[:due_date] %></p>
+  </div>
+  <div class="field" data-when="between">
+    <%= form.label :due_end, 'End date' %>
+    <%= form.date_field :due_end, value: @query.due_end, data: {filter_date_end: true}, aria: {invalid: @query.errors.key?(:due_end), describedby: 'due_end-error'} %>
+    <p class="field-error" id="due_end-error" <%= 'hidden' unless @query.errors.key?(:due_end) %>><%= @query.errors[:due_end] %></p>
+  </div>
+  <div class="field" data-when="period">
+    <%= form.label :due_period, 'Month or quarter' %>
+    <%= form.select :due_period, [['Choose a period', '']] + Operations::ProjectQuery::PERIOD_OPTIONS, {selected: @query.due_period}, data: {filter_period: true}, aria: {invalid: @query.errors.key?(:due_period), describedby: 'due_period-error'} %>
+    <p class="field-error" id="due_period-error" <%= 'hidden' unless @query.errors.key?(:due_period) %>><%= @query.errors[:due_period] %></p>
+  </div>
+  <p class="hint" data-when="today tomorrow yesterday next-week this-week last-week next-month this-month last-month next-quarter this-quarter last-quarter next-year this-year last-year year-to-date">Example today: <time datetime="<%= @query.today.iso8601 %>"><%= @query.today.strftime('%d %b %Y') %></time> (<%= Time.zone.name %>). Weeks start Monday.</p>
+</fieldset>

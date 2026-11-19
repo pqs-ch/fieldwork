@@ -1,0 +1,54 @@
+<% content_for :title, 'View settings' %>
+<header class="page-header">
+  <div class="page-header-content">
+    <h1>View settings</h1>
+    <p class="page-header-description">Manage “<%= @selected[:name] %>” without changing the tasks in your queue.</p>
+  </div>
+</header>
+<div class="work-view-settings stack" data-gap="section">
+  <%= render 'view_context' %>
+  <% unless @selected[:id] == 'shared' %>
+    <section class="stack" aria-labelledby="default-title">
+      <h2 id="default-title">Default view</h2>
+      <% if @workspace[:default] == @selected[:id] %>
+        <p>This view opens when you enter the work queue.</p>
+      <% else %>
+        <p class="hint">Open this view when you enter the work queue. Save or reset any working changes first.</p>
+        <%= form_with url: operations_work_default_path, local: true do %>
+          <%= render 'view_fields' %>
+          <%= button_tag 'Make default', class: 'button', disabled: @modified || @conflict %>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+  <% if @personal %>
+    <section class="stack" aria-labelledby="rename-title">
+      <h2 id="rename-title">Rename personal view</h2>
+      <p class="hint">Only the name changes. Working filters and columns remain unsaved.</p>
+      <%= form_with url: operations_rename_work_view_path, local: true, class: 'stack' do %>
+        <%= render 'view_fields' %>
+        <div class="field">
+          <%= label_tag :rename_view_name, 'New view name' %>
+          <%= text_field_tag :name, @rename_name || @selected[:name], id: 'rename_view_name', required: true, maxlength: 50 %>
+        </div>
+        <div class="cluster"><%= button_tag 'Rename view', class: 'button', disabled: @conflict %></div>
+      <% end %>
+    </section>
+  <% end %>
+  <section class="stack" aria-labelledby="share-title">
+    <h2 id="share-title">Share filters and sort</h2>
+    <p class="hint">The link excludes your personal view, default, columns and page. Recipients see the matching tasks they have access to.</p>
+    <div class="field">
+      <label for="share-work-url">Shareable link</label>
+      <input id="share-work-url" readonly value="<%= request.base_url + work_url_for(share: true) %>">
+    </div>
+    <p><%= link_to 'Open shared query', work_url_for(share: true) %></p>
+  </section>
+  <% if @personal %>
+    <section class="stack" aria-labelledby="delete-title">
+      <h2 id="delete-title">Delete personal view</h2>
+      <p class="hint">Remove the saved view. Tasks and working settings are retained.</p>
+      <p><%= link_to 'Delete view…', work_url_for(destination: :deletion, page: @page), class: 'button', data: {intent: 'danger'} %></p>
+    </section>
+  <% end %>
+</div>

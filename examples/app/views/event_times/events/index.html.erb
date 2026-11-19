@@ -1,0 +1,7 @@
+<% content_for :title, 'Event records' %>
+<header class="page-header"><div class="page-header-content"><div class="page-header-title"><h1>Event records</h1></div></div><div class="page-header-actions"><%= link_to 'Record an event', new_event_times_event_path, class: 'button', data: {intent: 'primary'} %></div></header>
+<% if @store[:records].empty? %>
+  <section class="empty-state"><h2 class="empty-state-title">No events recorded</h2><p class="empty-state-description">Record an event to retain its time, timezone and follow-up target.</p></section>
+<% else %>
+  <ul class="navigation-list" aria-label="Recorded events"><% @store[:records].values.reverse.each do |record| %><li><%= link_to event_times_event_path(record[:id]) do %><span class="navigation-list-content"><span class="navigation-list-title"><%= record[:subject] %></span><span class="navigation-list-description">Event: <%= wall_label(record[:event_local]) %> · <%= record[:timezone] %> · <%= EventTimes::EventEntry.offset_label(record[:event_offset]) %></span><span class="navigation-list-description">Review by <%= date_label(record[:review_on]) %></span></span><span class="navigation-list-indicator" aria-hidden="true">→</span><% end %></li><% end %></ul>
+<% end %>

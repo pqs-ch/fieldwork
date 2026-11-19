@@ -1,0 +1,4 @@
+<%= hidden_field_tag :state, @state.to_json, id: nil, data: {work_state: true} %>
+<%= hidden_field_tag :view, @selected[:id], id: nil %>
+<%= hidden_field_tag :view_revision, @base_revision, id: nil %>
+<%= hidden_field_tag :page, @page, id: nil %>

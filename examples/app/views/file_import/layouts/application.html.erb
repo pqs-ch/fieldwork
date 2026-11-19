@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><title><%= content_for?(:title) ? yield(:title) : 'Supplier imports' %> · Fieldwork</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="turbo-cache-control" content="no-cache"><%= csrf_meta_tags %>
+<%= stylesheet_link_tag 'fieldwork/ui', 'fieldwork/tables', 'file_import', 'data-turbo-track': 'reload' %><%= javascript_importmap_tags "file_import/application" %>
+  <%= stylesheet_link_tag "review", "data-turbo-track": "reload" %>
+</head><body>
+<%= render "review/navigation" %><a class="skip-link" href="#main">Skip to content</a><main id="main" class="page stack" data-width="<%= content_for?(:width) ? yield(:width) : 'default' %>" data-gap="section" tabindex="-1">
+<% if flash[:notice] %><p class="notice" role="status" data-result tabindex="-1"><%= flash[:notice] %></p><% end %><%= yield %></main></body></html>

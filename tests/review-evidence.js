@@ -1,0 +1,190 @@
+async page => {
+  const origin = __ORIGIN__;
+  const checks = [], errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.setDefaultTimeout(10000);
+  await page.context().clearCookies();
+  const assert = (ok, message) => { if (!ok) throw new Error(message); };
+  const post = (path, body) => page.evaluate(async ({path,body}) => {
+    const response = await fetch(path, {method:'POST', headers:{'X-CSRF-Token':document.querySelector('meta[name="csrf-token"]').content, 'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(body)});
+    return {status:response.status,text:await response.text()};
+  }, {path,body});
+  const saved = () => page.locator('#review-result').waitFor();
+  const formValues = () => page.locator('#evidence-form').evaluate(form => [...new FormData(form).entries()].filter(([,value])=>typeof value==='string'));
+  const link = async (id, artifact, purpose) => {
+    await page.goto(`${origin}/population-review/reviews/1/inputs/${id}/evidence/new?mode=link&view=outstanding`);
+    await page.getByRole('button',{name:/Existing evidence/}).click();
+    await page.getByRole('combobox').fill(artifact);
+    await page.getByRole('option',{name:new RegExp(artifact)}).click();
+    await page.getByLabel('What this evidence supports',{exact:true}).fill(purpose);
+    await page.getByRole('button',{name:'Link evidence',exact:true}).click();
+    await saved();
+  };
+  const assess = async (id) => {
+    await page.goto(`${origin}/population-review/reviews/1/inputs/${id}/assessment`);
+    await page.getByRole('radio',{name:'Satisfactory',exact:true}).check();
+    await page.getByLabel('Assessment basis',{exact:true}).fill('Checked the operating evidence and recorded the scope and any availability limits.');
+    await page.getByRole('button',{name:'Save assessment',exact:true}).click();
+    await saved();
+  };
+  await page.goto(origin+'/population-review/reviews/1');
+  await page.getByRole('button',{name:'Start review',exact:true}).click();
+  await saved();
+  await link(1,'service-account-export', 'Identifies the backup account and its recorded owner.');
+  assert(new URL(page.url()).searchParams.get('view')==='outstanding', 'Evidence return retains the originating review view');
+  assert((await page.getByRole('list',{name:'Current account evidence'}).innerText()).includes('Main workspace access inventory'), 'Linked file shows its source');
+  const download = await page.context().request.get(origin+'/population-review/evidence/1/download');
+  assert(download.status()===200 && (await download.text()).includes('Backup automation') && download.headers()['content-disposition'].includes('attachment'), 'Shared original downloads actual attachment bytes');
+  await assess(1);
+  await link(2,'service-account-export','Identifies the deployment account and its recorded owner.');
+  await assess(2);
+  await page.goto(origin+'/population-review/evidence/1');
+  assert(await page.getByRole('heading',{name:'Accounts using this original',exact:true}).isVisible() && (await page.locator('main').innerText()).includes('Deployment robot'), 'One original is shared across accounts');
+  await page.goto(origin+'/population-review/reviews/1/inputs/1');
+  await page.getByRole('link',{name:'Remove link to service-account-export.csv',exact:true}).click();
+  await page.getByRole('link',{name:'Cancel',exact:true}).click();
+  await page.getByRole('link',{name:'Remove link to service-account-export.csv',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Remove link to service-account-export.csv',exact:true}).click();
+  await page.getByRole('button',{name:'Remove link',exact:true}).click();
+  await saved();
+  assert((await page.locator('main').innerText()).includes('Changed facts'), 'Removing evidence invalidates an unfinished assessment');
+  assert(await page.getByRole('list',{name:'Current account evidence'}).count()===0, 'Confirmed removal affects only the current account link');
+
+  assert((await page.getByRole('region',{name:'Latest assessment',exact:true}).getByRole('list',{name:'Evidence recorded with this assessment'}).innerText()).includes('Identifies the backup account'), 'Earlier assessment retains the removed reference and its explanation');
+  assert((await page.context().request.get(origin+'/population-review/evidence/1/download')).status()===200, 'Removing a link does not delete the original');
+  await page.goto(origin+'/population-review/reviews/1/inputs/2');
+  assert(await page.getByRole('link',{name:'Remove link to service-account-export.csv',exact:true}).isVisible(), 'Other account keeps its shared link');
+  checks.push('shared originals, source/date context, actual downloads, scoped link removal and retained assessment references');
+
+  await page.goto(origin+'/population-review/reviews/1/inputs/1/evidence/new?mode=link');
+  assert(await page.locator('option[value="4"]').isDisabled(), 'Unavailable evidence is not selectable');
+  const staleForm=await formValues();
+  const forged=await post('/population-review/reviews/1/inputs/1/evidence',staleForm.filter(([name])=>!['evidence_entry[artifact_id]','evidence_entry[purpose]'].includes(name)).concat([['evidence_entry[artifact_id]','4'],['evidence_entry[purpose]','Unavailable original cannot be linked.']]));
+  assert(forged.status===409, 'Server rejects an unavailable submitted original');
+  assert((await page.context().request.get(origin+'/population-review/evidence/4/download')).status()===410, 'Unavailable download never returns a substitute or invented file');
+  await page.getByRole('button',{name:/Existing evidence/}).click();
+  await page.getByRole('combobox').fill('backup-safeguards');
+  await page.getByRole('option',{name:/backup-safeguards/}).click();
+  await page.getByLabel('What this evidence supports',{exact:true}).fill('Shows backup safeguards for this account.');
+  await post('/population-review/scenarios',{scenario:'failure'});
+  await page.getByRole('button',{name:'Link evidence',exact:true}).click();
+  await page.getByText(/The save service is temporarily unavailable/).waitFor();
+  assert(await page.getByLabel('What this evidence supports',{exact:true}).inputValue()==='Shows backup safeguards for this account.', 'Link failure retains its purpose');
+  await page.getByRole('button',{name:'Link evidence',exact:true}).click();
+  await saved();
+  await page.goto(origin+'/population-review/reviews/1/inputs/2/assessment');
+  await page.getByLabel('Assessment basis',{exact:true}).fill('Draft based on the original before withdrawal.');
+  const attempt=await page.locator('#review-entry').evaluate(form=>[...new FormData(form).entries()]);
+  const other=await page.context().newPage();
+  try {
+    await other.goto(origin+'/population-review/evidence/1/withdrawal');
+    assert((await other.locator('main').innerText()).includes('1 account currently uses'), 'Withdrawal identifies the affected account scope');
+    const withdrawal=await other.locator('#evidence-form').evaluate(form=>[...new FormData(form).entries()].filter(([name])=>name!=='evidence_entry[reason]'));
+    const race=await page.context().newPage();
+    try {
+      await race.goto(origin+'/population-review/reviews/1/inputs/3/evidence/new?mode=link');
+      await race.getByRole('button',{name:/Existing evidence/}).click();
+      await race.getByRole('combobox').fill('service-account-export');
+      await race.getByRole('option',{name:/service-account-export/}).click();
+      await race.getByLabel('What this evidence supports',{exact:true}).fill('Additional scope linked while withdrawal was being reviewed.');
+      await race.getByRole('button',{name:'Link evidence',exact:true}).click();
+      await race.locator('#review-result').waitFor();
+    } finally {await race.close();}
+    const changedScope=await post('/population-review/evidence/1/withdraw',withdrawal.concat([['evidence_entry[reason]','Draft reason retained when uses change.']]));
+    assert(changedScope.status===409 && changedScope.text.includes('Draft reason retained when uses change.'), 'Withdrawal refuses a newly widened scope and retains its reason');
+    assert((await page.context().request.get(origin+'/population-review/evidence/1/download')).status()===200, 'Changed-scope withdrawal leaves the original available');
+    await other.reload();
+    await other.getByLabel('Withdrawal reason',{exact:true}).fill('The export is superseded by a corrected source report.');
+    await other.getByRole('button',{name:'Withdraw original',exact:true}).click();
+    await other.locator('#review-result').waitFor();
+  } finally {await other.close();}
+  const stale=await post('/population-review/reviews/1/inputs/2/assessment',attempt);
+  assert(stale.status===409 && stale.text.includes('Draft based on the original before withdrawal.'), 'Withdrawal rejects an in-flight assessment and retains its draft');
+  // This fetch did not replace the live page; approve leaving the local draft.
+  await page.getByRole('link',{name:'Cancel',exact:true}).click();
+  await page.getByRole('dialog').getByRole('button',{name:'Leave without saving',exact:true}).click();
+  await page.getByRole('heading',{name:'Service-account assurance review',exact:true}).waitFor();
+  assert((await page.context().request.get(origin+'/population-review/evidence/1/download')).status()===410, 'Withdrawn original stops downloads');
+  await page.goto(origin+'/population-review/reviews/1/inputs/2');
+  assert((await page.locator('main').innerText()).includes('Original withdrawn: The export is superseded'), 'Current evidence explains withdrawal without losing metadata');
+  await page.getByRole('link',{name:'Remove link to service-account-export.csv',exact:true}).click();
+  await page.getByRole('button',{name:'Remove link',exact:true}).click();
+  await saved();
+  for(const id of [1,2,3,4]) await assess(id);
+  await page.getByRole('link',{name:'Complete review',exact:true}).click();
+  await page.getByLabel('Review conclusion',{exact:true}).fill('Completed checking with current evidence; earlier references are retained.');
+  await page.getByRole('button',{name:'Complete review',exact:true}).click();
+  await saved();
+  await page.goto(origin+'/population-review/evidence/2/withdrawal');
+  await page.getByLabel('Withdrawal reason',{exact:true}).fill('The original is no longer available for new use.');
+  await page.getByRole('button',{name:'Withdraw original',exact:true}).click();
+  await saved();
+  await page.goto(origin+'/population-review/reviews/1/inputs/1');
+  assert(!await page.getByRole('link',{name:'Record new assessment',exact:true}).count(), 'Completed assessment remains read-only after withdrawal');
+
+  assert((await page.getByRole('region',{name:'Latest assessment',exact:true}).getByRole('list',{name:'Evidence recorded with this assessment'}).innerText()).includes('backup-safeguards.txt'), 'Completed assessment retains the original metadata');
+  assert(!(await page.locator('header.page-header').innerText()).includes('Changed facts'), 'Later withdrawal does not rewrite completion');
+  checks.push('unavailable-file rejection, link retry, withdrawal scope, in-flight assessment conflict and immutable completed references');
+
+  await page.context().clearCookies();
+  await page.goto(origin+'/population-review/reviews/1');
+  await page.getByRole('button',{name:'Start review',exact:true}).click();
+  await saved();
+  await page.goto(origin+'/population-review/reviews/1/inputs/1/evidence/new?mode=upload&view=changed');
+  await page.locator('#evidence-files').setInputFiles({name:'uploaded-proof.txt',mimeType:'text/plain',buffer:Buffer.from('Actual uploaded synthetic evidence bytes.')});
+  await page.getByLabel('Source',{exact:true}).fill('Operating system check');
+  await page.getByLabel('Evidence date',{exact:true}).fill('2026-10-20');
+  await page.getByLabel('What this evidence supports',{exact:true}).fill('Documents the backup account safeguards.');
+  await post('/population-review/scenarios',{scenario:'failure'});
+  await page.getByRole('button',{name:'Upload and link files',exact:true}).click();
+  await page.getByText(/The save service is temporarily unavailable/).waitFor();
+  assert(await page.locator('#evidence-files').evaluate(el=>el.files[0]?.name)==='uploaded-proof.txt', 'Failed enhanced upload retains the actual File');
+  assert(await page.getByLabel('What this evidence supports',{exact:true}).inputValue()==='Documents the backup account safeguards.', 'Failed upload retains the purpose');
+  const uploadFields=Object.fromEntries(await formValues());
+  await page.getByRole('link',{name:'Cancel',exact:true}).click();
+  await page.getByRole('dialog').getByRole('button',{name:'Keep editing',exact:true}).click();
+  assert(await page.locator('#evidence-files').evaluate(el=>el.files.length)===1, 'Canceled exit retains queued files');
+  await page.getByRole('button',{name:'Upload and link files',exact:true}).click();
+  await saved();
+  assert(new URL(page.url()).searchParams.get('view')==='changed', 'Upload returns to its originating review view');
+  const fileResponse=await page.context().request.get(origin+'/population-review/evidence/5/download');
+  assert(fileResponse.status()===200 && await fileResponse.text()==='Actual uploaded synthetic evidence bytes.', 'Acknowledged upload downloads exact stored bytes');
+  const replay=await page.context().request.post(origin+'/population-review/reviews/1/inputs/1/evidence',{headers:{Accept:'application/json'},multipart:{...uploadFields,'files[]':{name:'uploaded-proof.txt',mimeType:'text/plain',buffer:Buffer.from('Actual uploaded synthetic evidence bytes.')}}});
+  assert(replay.status()===200, 'Successful upload replay is acknowledged');
+  await page.reload();
+  assert(await page.getByRole('list',{name:'Current account evidence'}).locator('li.attachment').count()===1, 'Upload retry creates one original/link');
+  const isolated=await page.context().browser().newContext();
+  try {assert((await isolated.request.get(origin+'/population-review/evidence/5/download')).status()===404,'Original downloads are isolated to the browser workspace');} finally {await isolated.close();}
+  checks.push('enhanced multipart retry with File/purpose retention, canceled exit, exact-byte download, deduplication and workspace isolation');
+
+  const nativeContext=await page.context().browser().newContext({javaScriptEnabled:false});
+  try {
+    const native=await nativeContext.newPage();
+    await native.goto(origin+'/population-review/reviews/1');
+    await native.getByRole('button',{name:'Start review',exact:true}).click();
+    await native.goto(origin+'/population-review/reviews/1/inputs/1/evidence/new?mode=upload');
+    const files=[{name:'native-a.txt',mimeType:'text/plain',buffer:Buffer.from('native a')},{name:'native-b.csv',mimeType:'text/csv',buffer:Buffer.from('account,owner\nbackup,Jamie\n')}];
+    await native.locator('#evidence-files').setInputFiles({name:'not-evidence.exe',mimeType:'application/octet-stream',buffer:Buffer.from('Rejected synthetic file.')});
+    await native.getByLabel('Source',{exact:true}).fill('Native operating export');
+    await native.getByLabel('Evidence date',{exact:true}).fill('2026-10-20');
+    await native.getByLabel('What this evidence supports',{exact:true}).fill('Native evidence supports this account.');
+    await native.getByRole('button',{name:'Upload and link files',exact:true}).click();
+    await native.getByText(/The files were not saved. Select them again/).waitFor();
+    assert((await native.locator('main').innerText()).includes('Files must be TXT, CSV or PDF files'), 'Server enforces supported file types independently of accept');
+    assert(await native.getByLabel('Source',{exact:true}).inputValue()==='Native operating export','Native 422 retains metadata and requests honest file reselection');
+    await native.locator('#evidence-files').setInputFiles(files);
+    await native.getByLabel('What this evidence supports',{exact:true}).fill('Native evidence supports this account.');
+    await native.getByRole('button',{name:'Upload and link files',exact:true}).click();
+    await native.locator('#review-result').waitFor();
+    assert(await native.getByRole('list',{name:'Current account evidence'}).locator('li.attachment').count()===2,'Native multi-file submission links the complete batch');
+    await native.goto(origin+'/population-review/reviews/1/inputs/2/evidence/new?mode=link');
+    await native.getByLabel('Existing evidence',{exact:true}).selectOption('5');
+    await native.getByLabel('What this evidence supports',{exact:true}).fill('Reuses the same original for the second account.');
+    await native.getByRole('button',{name:'Link evidence',exact:true}).click();
+    await native.locator('#review-result').waitFor();
+    assert((await native.getByRole('list',{name:'Current account evidence'}).innerText()).includes('native-a.txt'),'Native reuse links the existing uploaded original');
+  } finally {await nativeContext.close();}
+  assert(errors.length===0,'No uncaught evidence UI errors: '+errors.join('; '));
+  checks.push('native batch uploads, honest 422 reselection, retained metadata and reuse without JavaScript');
+  return {passed:true,checks};
+}

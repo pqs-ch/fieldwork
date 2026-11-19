@@ -1,0 +1,12 @@
+<% content_for :title, @project.name %>
+<header class="page-header"><div class="page-header-content"><nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/operations/projects">Projects</a></li><li><span aria-current="page"><%= @project.name %></span></li></ol></nav><div class="page-header-title"><h1><%= @project.name %></h1><span class="status-indicator" data-tone="<%= status_tone(@project.status) %>"><%= @project.status %></span></div></div><div class="page-header-actions"><a class="button" data-intent="primary" href="<%= edit_operations_project_path(@project.id) %>">Edit project</a></div></header>
+<div class="content-surface"><div class="sidebar-layout" data-divider>
+<div class="section-stack">
+  <section class="stack" aria-labelledby="overview-title"><header class="split"><h2 id="overview-title">Overview</h2><a href="<%= edit_operations_project_path(@project.id) %>#operation_project_description">Edit description</a></header><p><%= @project.description %></p><dl class="description-list" data-layout="facts"><div><dt>Owner</dt><dd><%= @project.owner %></dd></div><div><dt>Due date</dt><dd><time datetime="<%= @project.due_on %>"><%= Date.iso8601(@project.due_on).strftime('%d %B %Y') %></time></dd></div><div><dt>Budget</dt><dd><%= money(@project.budget) %></dd></div></dl></section>
+  <% if @project.id == 1 %>
+  <section class="stack" aria-labelledby="delivery-title"><h2 id="delivery-title">Delivery plan</h2><dl class="description-list" data-density="compact"><div><dt>Discovery</dt><dd>Research complete · 30 October</dd></div><div><dt>Design and content</dt><dd>In progress · 6 November</dd></div><div><dt>Launch</dt><dd>Planned · 20 November</dd></div></dl></section>
+  <% end %>
+</div>
+<aside class="stack" aria-labelledby="activity-title"><h2 id="activity-title">Recent activity</h2><% if @events.any? %><ol class="change-history" role="list" aria-label="Project activity, newest first"><% @events.each do |event| %><li><p><strong><%= event[:actor] %></strong> <%= event[:message] %></p><p class="change-meta"><time datetime="<%= event[:at] %>"><%= Time.iso8601(event[:at]).strftime('%d %b %Y, %H:%M UTC') %></time></p></li><% end %></ol><% else %><p class="hint">No activity recorded yet.</p><% end %></aside>
+</div>
+</div>

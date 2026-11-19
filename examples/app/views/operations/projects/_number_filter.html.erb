@@ -1,0 +1,19 @@
+<fieldset class="table-column-fields" id="budget-options" data-table-column="budget" data-label="Budget" data-type="number">
+  <legend>Budget</legend>
+  <%= render 'sort_actions', ascending: 'Sort smallest to largest', descending: 'Sort largest to smallest' %>
+  <button class="menu-command" type="button" data-reset-filter disabled>Clear filter from “Budget”</button>
+  <div class="field">
+    <%= form.label :budget_condition, 'Number filters' %>
+    <%= form.select :budget_condition, Operations::ProjectQuery::NUMBER_OPTIONS, {selected: @query.budget_condition}, data: {filter_condition: true} %>
+  </div>
+  <div class="field" data-when="equals not-equals greater greater-equal less less-equal between">
+    <%= form.label :budget_minimum, 'Amount (CHF)' %>
+    <%= form.number_field :budget_minimum, value: @query.budget_minimum, step: 'any', data: {filter_minimum: true}, aria: {invalid: @query.errors.key?(:budget_minimum), describedby: 'budget_minimum-error'} %>
+    <p class="field-error" id="budget_minimum-error" <%= 'hidden' unless @query.errors.key?(:budget_minimum) %>><%= @query.errors[:budget_minimum] %></p>
+  </div>
+  <div class="field" data-when="between">
+    <%= form.label :budget_maximum, 'Upper amount (CHF)' %>
+    <%= form.number_field :budget_maximum, value: @query.budget_maximum, step: 'any', data: {filter_maximum: true}, aria: {invalid: @query.errors.key?(:budget_maximum), describedby: 'budget_maximum-error'} %>
+    <p class="field-error" id="budget_maximum-error" <%= 'hidden' unless @query.errors.key?(:budget_maximum) %>><%= @query.errors[:budget_maximum] %></p>
+  </div>
+</fieldset>

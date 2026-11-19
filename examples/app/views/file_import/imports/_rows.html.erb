@@ -1,0 +1,20 @@
+<% labels = { 'ready'=>'Ready', 'invalid'=>'Needs correction', 'skipped'=>'Skipped', 'excluded'=>'Excluded', 'failed'=>'Unsuccessful', 'imported'=>'Imported' } %>
+<section class="table-panel">
+  <div class="table-scroll" role="region" aria-label="Supplier row results" aria-describedby="row-reference-hint" tabindex="0">
+    <table class="data-table">
+      <caption><%= local_assigns.fetch(:caption) %></caption>
+      <thead><tr><th scope="col">Row</th><th scope="col">State</th><th scope="col" data-wrap="nowrap">Reference</th><th scope="col" data-wrap="wrap">Supplier</th><th scope="col" data-wrap="nowrap">Owner email</th><th scope="col" data-wrap="wrap">Details</th></tr></thead>
+      <tbody><% rows.each do |row| %>
+        <tr id="row-<%= row[:row] %>" tabindex="-1">
+          <th scope="row"><%= row[:row] %></th>
+          <td><span class="status-indicator" data-tone="<%= row[:state]=='imported' ? 'success' : %w[invalid failed].include?(row[:state]) ? 'error' : 'neutral' %>"><%= labels.fetch(row[:state]) %></span></td>
+          <td data-wrap="nowrap"><%= row[:values]['reference'].presence || 'Missing' %></td>
+          <td data-wrap="wrap"><%= row[:values]['name'].presence || 'Missing' %></td>
+          <td data-wrap="nowrap"><%= row[:values]['email'].presence || 'Missing' %></td>
+          <td data-wrap="wrap"><%= row[:message].presence || '—' %></td>
+        </tr>
+      <% end %></tbody>
+    </table>
+  </div>
+</section>
+<p class="hint" id="row-reference-hint">CSV record numbers include the header. Quoted multiline values count as one record.</p>

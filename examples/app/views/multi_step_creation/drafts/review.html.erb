@@ -1,0 +1,11 @@
+<% content_for :title, 'Check review request' %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Review requests', multi_step_creation_requests_path %></li><li><span aria-current="page">Draft</span></li></ol></nav>
+<header class="page-header"><div class="page-header-title"><h1>Check review request</h1></div></header>
+<% if @error %><p class="notice" data-tone="error" role="status" tabindex="-1" data-result><%= @error %></p><% end %>
+<div class="content-surface stack" data-gap="section">
+  <%= render 'multi_step_creation/drafts/answers', values: @values, change: true %>
+  <%= form_with url: multi_step_creation_requests_path, local: true, id: 'create-request' do %>
+    <%= hidden_field_tag :draft_id, @draft[:id] %><%= hidden_field_tag :revision, @draft[:revision] %>
+    <div class="form-actions"><%= link_to 'Save for later', multi_step_creation_requests_path, class: 'button' %><%= button_tag 'Create review request', type: 'submit', class: 'button', data: { intent: 'primary', turbo_submits_with: 'Creating request…' } %></div>
+  <% end %>
+</div>

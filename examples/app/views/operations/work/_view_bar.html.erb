@@ -1,0 +1,55 @@
+<div class="table-toolbar work-view-toolbar">
+  <div class="cluster">
+    <%= form_with url: operations_work_index_path, method: :get, local: true,
+          class: 'work-view-picker', data: {work_picker: true} do %>
+      <div class="field">
+        <label class="visually-hidden" for="work-view">Work view</label>
+        <select id="work-view" name="view" required title="<%= @selected[:name] %>" data-work-picker>
+          <% if @selected[:id] == 'shared' %><option value="" selected disabled>Shared query</option><% end %>
+          <optgroup label="Built-in views">
+            <% @builtins.each_value do |view| %>
+              <option value="<%= view[:id] %>" <%= 'selected' if @selected[:id] == view[:id] %>><%= view[:name] %></option>
+            <% end %>
+          </optgroup>
+          <% if @workspace[:views].any? %>
+            <optgroup label="Your views">
+              <% @workspace[:views].each_value do |view| %>
+                <option value="<%= view[:id] %>" <%= 'selected' if @selected[:id] == view[:id] %>><%= view[:name] %></option>
+              <% end %>
+            </optgroup>
+          <% end %>
+        </select>
+      </div>
+      <%= button_tag 'Open view', class: 'button', data: {work_open: true} %>
+    <% end %>
+    <span class="hint" data-work-change <%= 'hidden' unless @modified || @selected[:id] == 'shared' %>><%= @selected[:id] == 'shared' ? 'Unsaved query' : 'Modified' %></span>
+    <% if @personal %>
+      <%= form_with url: operations_work_views_path, local: true, hidden: !@modified, data: {work_save: true} do %>
+        <%= render 'view_fields' %>
+        <%= hidden_field_tag :saved_id, @selected[:id], id: nil %>
+        <%= button_tag 'Save changes', class: 'button', disabled: !@modified || @conflict,
+              data: {work_update: true, conflict: @conflict} %>
+      <% end %>
+    <% end %>
+  </div>
+  <div data-table-filter-summary hidden></div>
+  <div class="cluster work-view-actions">
+    <button class="button" data-variant="quiet" type="button" data-table-configure-columns disabled>Columns</button>
+    <div class="action-dropdown">
+      <button class="button" data-variant="quiet" type="button" popovertarget="work-view-actions">View options</button>
+      <div class="action-menu" id="work-view-actions" popover="auto" role="group" aria-label="Work view options">
+        <ul>
+          <% unless @selected[:id] == 'shared' %>
+            <li><%= link_to 'Reset to saved view', operations_work_index_path(view: @selected[:id]), class: 'action-item',
+                  hidden: !@modified && !@conflict, data: {work_reset: true} %></li>
+          <% end %>
+          <li><%= link_to 'Save as…', work_url_for(destination: :new_view, page: @page), class: 'action-item', data: {work_context: true} %></li>
+          <li><%= link_to 'View settings', work_url_for(destination: :settings, page: @page), class: 'action-item', data: {work_context: true} %></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<% if @view_error %>
+  <p class="notice" data-tone="error" role="status" tabindex="-1" data-work-result><%= @view_error %></p>
+<% end %>

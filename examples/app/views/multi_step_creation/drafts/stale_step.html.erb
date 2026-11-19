@@ -1,0 +1,9 @@
+<% content_for :title, 'Draft changed'; content_for :width, 'wide' %>
+<header class="page-header"><div class="page-header-content"><h1>Draft changed in another tab</h1><% if @step == 'scope' %><p class="page-header-description"><%= @draft[:values]['supplier'] %></p><% end %></div></header>
+<p class="notice" data-tone="warning" role="status" tabindex="-1" data-result><%= @error %></p>
+<div class="content-surface grid">
+  <section class="stack" aria-labelledby="attempted-heading"><h2 id="attempted-heading">Your attempted answers</h2><%= render 'attempted_answers', values: @entry.values %></section>
+  <section class="stack" aria-labelledby="saved-heading"><h2 id="saved-heading">Saved answers</h2><%= render 'attempted_answers', values: @draft[:values] %></section>
+</div>
+<p class="hint">Open the saved answers in a new tab to compare or copy values. This comparison stays available; nothing is merged automatically.</p>
+<p><%= link_to 'Open saved step in a new tab', step_path(@step, return_to: @return_to_review ? 'review' : nil), target: '_blank', rel: 'noopener', class: 'button', data: { intent: 'primary' } %></p>

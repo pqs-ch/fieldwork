@@ -1,0 +1,12 @@
+<% uses = PopulationReview::ReviewEvidence.active(@input) %>
+<section class="stack" aria-labelledby="evidence-heading">
+  <div class="split"><h2 id="evidence-heading">Supporting evidence</h2>
+    <% unless @review[:completed_at] %><div class="cluster"><%= link_to 'Add files', population_review_review_new_evidence_path(@review[:id], @input[:id], mode: 'upload', view: @view), class: 'button' %><%= link_to 'Link existing evidence', population_review_review_new_evidence_path(@review[:id], @input[:id], mode: 'link', view: @view), class: 'button' %></div><% end %>
+  </div>
+  <% if uses.empty? %><p class="hint">No evidence linked. Add files or reuse an existing original when it supports your assessment.</p><% else %>
+    <ul class="attachment-list" aria-label="Current account evidence">
+      <% uses.each do |use| %><%= render 'population_review/evidence/file', artifact: @store[:evidence].fetch(use[:artifact_id]), purpose: use[:purpose], remove_path: @review[:completed_at] ? nil : population_review_review_evidence_removal_path(@review[:id], @input[:id], use[:id], view: @view) %><% end %>
+    </ul>
+  <% end %>
+  <% unless @review[:completed_at] %><p class="hint">Changes to these links or the originals require a fresh assessment if one is already recorded.</p><% end %>
+</section>

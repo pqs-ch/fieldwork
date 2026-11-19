@@ -1,0 +1,143 @@
+async page => {
+  const origin = __ORIGIN__, checks = [], errors = [];
+  const assert = (value, message) => { if (!value) throw new Error(message); };
+  page.context().setDefaultTimeout(10000);
+  page.on('pageerror', error => errors.push(error.message));
+  const requestPath = '/record-activities/requests/2048';
+  const state = target => target.locator('.page-header .status-indicator').innerText();
+  const events = target => target.locator('.change-history > li');
+  let stage = 'completed starting record';
+  try {
+    await page.goto(origin + '/review/record-activities');
+    await page.getByRole('link', {name: 'Completed request', exact: true}).click();
+    await page.getByRole('heading', {name: 'Mailroom scanner jams on duplex jobs', exact: true}).waitFor();
+    assert(await state(page) === 'Completed', 'Completed entry point did not open a completed record');
+    assert(await page.getByText('Nothing outstanding. Installation and testing are recorded.', {exact: true}).isVisible(), 'Completed readiness is unclear');
+    assert(await page.getByRole('link', {name: 'Confirm installation', exact: true}).count() === 0, 'Completed record offers an unavailable activity');
+    assert(await page.getByRole('region', {name: 'Assessment', exact: true}).locator('.rich-content > p').count() === 2, 'Recorded findings lost their paragraphs');
+    await page.getByRole('link', {name: 'Read assessment', exact: true}).focus();await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.activeElement?.id === 'assessment-title');
+    checks.push('Completed review entry, readable recorded paragraphs and keyboard history links');
+
+    stage = 'assessment validation and replay';
+    await page.goto(origin + requestPath);
+    await page.getByRole('link', {name: 'Assess request', exact: true}).click();
+    await page.getByLabel('Estimated cost (CHF)', {exact: true}).waitFor();
+    const older = await page.context().newPage();await older.goto(page.url());
+    await page.getByLabel('Estimated cost (CHF)', {exact: true}).fill('650');
+    await page.getByLabel('Assessment findings', {exact: true}).fill('   ');
+    await page.getByRole('button', {name: 'Record assessment', exact: true}).click();
+    await page.waitForFunction(() => document.querySelector('textarea')?.getAttribute('aria-invalid') === 'true');
+    assert(await page.getByLabel('Assessment findings', {exact: true}).inputValue() === '   ', 'Validation lost attempted findings');
+    assert(await page.getByLabel('Estimated cost (CHF)', {exact: true}).inputValue() === '650', 'Validation lost the cost');
+    assert(await page.getByRole('button', {name: 'Record assessment', exact: true}).isEnabled(), 'Correctable validation blocked retry');
+    const unrecorded = await page.request.get(origin + requestPath);
+    assert(!(await unrecorded.text()).includes('id="assessment-title"'), 'Failed validation recorded an assessment');
+    const findings = 'The display flickers after warming up. The connector is labelled <spare>.\n\nReplace the panel and test it after a 45-minute warm-up.';
+    await page.getByLabel('Assessment findings', {exact: true}).fill(findings);
+    const payload = await page.locator('#activity-form').evaluate(form => ({url: form.action, values: Object.fromEntries(new FormData(form))}));
+    await page.getByRole('button', {name: 'Record assessment', exact: true}).click();
+    await page.getByText('Assessment recorded.', {exact: true}).waitFor();
+    assert(await state(page) === 'Ready to order', 'Assessment did not advance the request');
+    assert(await events(page).count() === 2, 'Assessment history is incomplete');
+    const assessment = page.getByRole('region', {name: 'Assessment', exact: true});
+    assert(await assessment.locator('.rich-content > p').count() === 2, 'Saved findings collapsed paragraph boundaries');
+    assert((await assessment.innerText()).includes('<spare>') && await assessment.locator('spare').count() === 0, 'Plain text was interpreted as HTML');
+    const historyText = (await events(page).allInnerTexts()).join('\n');
+    assert(!historyText.includes('The display flickers after warming up.'), 'History repeated the full recorded findings');
+    const replay = await page.request.post(payload.url, {form: payload.values, maxRedirects: 0});
+    assert(replay.status() === 303, 'Completed activity replay was not acknowledged');
+    await page.reload();
+    await page.getByText('This activity was already recorded. The current request is shown below.', {exact: true}).waitFor();
+    assert(await events(page).count() === 2, 'Replay duplicated the recorded event');
+    checks.push('Server validation retains answers; assessment advances atomically; replay does not duplicate; plain-text paragraphs stay literal');
+
+    stage = 'stale assessment recovery';
+    await older.getByLabel('Estimated cost (CHF)', {exact: true}).fill('720');
+    await older.getByLabel('Assessment findings', {exact: true}).fill('Second assessment to retain while checking the latest request.');
+    await older.getByRole('button', {name: 'Record assessment', exact: true}).click();
+    await older.getByText(/This request changed after you opened the form/).waitFor();
+    assert(await older.getByRole('button', {name: 'Record assessment', exact: true}).isDisabled(), 'Stale form still offers a submission that cannot succeed');
+    assert(await older.getByLabel('Estimated cost (CHF)', {exact: true}).inputValue() === '720', 'Stale form lost the attempted cost');
+    assert((await older.getByLabel('Assessment findings', {exact: true}).inputValue()).startsWith('Second assessment'), 'Stale form lost findings');
+    const latestPromise = older.waitForEvent('popup');
+    await older.getByRole('link', {name: 'Review the latest request in a new tab', exact: true}).click();
+    const latest = await latestPromise;
+    await latest.getByRole('link', {name: 'Record order', exact: true}).waitFor();
+    assert(await state(latest) === 'Ready to order', 'Recovery did not show current state');
+    assert(await events(latest).count() === 2, 'Stale submission changed history');
+    await latest.close();await older.close();
+    checks.push('Stale submission retains the draft, disables retry and opens current available work separately');
+
+    stage = 'order and installation';
+    await page.getByRole('link', {name: 'Record order', exact: true}).click();
+    await page.getByLabel('Supplier', {exact: true}).fill('Northline Office');
+    await page.getByLabel('Order reference', {exact: true}).fill('PO-1094');
+    const expected = await page.getByLabel('Expected delivery', {exact: true}).inputValue();
+    await page.getByLabel('Order note', {exact: true}).fill('Ordered a compatible panel for reception.');
+    await page.getByRole('button', {name: 'Record order', exact: true}).click();
+    await page.getByText('Order recorded.', {exact: true}).waitFor();
+    assert(await state(page) === 'Awaiting installation', 'Order did not advance the request');
+    assert(await page.getByRole('region', {name: 'Order', exact: true}).locator('time').getAttribute('datetime') === expected, 'Recorded delivery date lost its calendar identity');
+    assert(await page.locator('.checklist-item').count() === 1, 'Recorded order did not reduce outstanding work');
+    await page.getByRole('link', {name: 'Confirm installation', exact: true}).click();
+    const installed = await page.getByLabel('Installation date', {exact: true}).inputValue();
+    await page.getByRole('checkbox', {name: 'Replacement installed and working', exact: true}).check();
+    await page.getByLabel('Installation outcome', {exact: true}).fill('Replaced the panel and reconnected the information feed.\n\nAfter a 45-minute test the picture remained stable. Reception confirmed the result.');
+    await page.getByRole('button', {name: 'Confirm installation', exact: true}).click();
+    await page.getByText('Installation confirmed.', {exact: true}).waitFor();
+    assert(await state(page) === 'Completed' && await events(page).count() === 4, 'Installation did not complete the record and history together');
+    assert(await page.getByText('Nothing outstanding. Installation and testing are recorded.', {exact: true}).isVisible(), 'Completed record retained outstanding work');
+    assert(await page.getByRole('region', {name: 'Installation', exact: true}).locator('time').getAttribute('datetime') === installed, 'Installation date changed when displayed');
+    checks.push('Order and installation refresh facts, dates, state, history and remaining work');
+
+    stage = 'note draft and completed context';
+    await page.getByRole('link', {name: 'Record progress note', exact: true}).click();
+    await page.getByLabel('Progress note', {exact: true}).fill('Reception confirmed the next morning that the display was stable.\n\nThe temporary welcome sign has been removed.');
+    assert((await page.getByRole('complementary', {name: 'Request context', exact: true}).innerText()).includes('Installed on'), 'Completed activity context omitted the actual installation');
+    await page.getByRole('link', {name: 'Cancel', exact: true}).click();
+    await page.getByRole('button', {name: 'Keep editing', exact: true}).click();
+    assert(await page.getByRole('link', {name: 'Cancel', exact: true}).evaluate(node => node === document.activeElement), 'Keep editing did not return focus');
+    assert((await page.getByLabel('Progress note', {exact: true}).inputValue()).includes('temporary welcome sign'), 'Canceled exit lost the draft');
+    await page.getByRole('button', {name: 'Record note', exact: true}).click();
+    await page.getByText('Progress note recorded.', {exact: true}).waitFor();
+    assert(await state(page) === 'Completed' && await events(page).count() === 5, 'Progress note changed lifecycle state or failed to add history');
+    assert(await events(page).first().locator('.rich-content > p').count() === 2, 'Progress note lost its paragraphs');
+    checks.push('Completed context shows installation; protected exit retains notes; progress notes add history without changing state');
+
+    stage = 'native installation and expired form';
+    const nativeContext = await page.context().browser().newContext({javaScriptEnabled: false});
+    nativeContext.setDefaultTimeout(10000);
+    try {
+      const native = await nativeContext.newPage();
+      await native.goto(origin + '/record-activities/requests/2055');
+      await native.getByRole('link', {name: 'Confirm installation', exact: true}).click();
+      const nativeDate = await native.getByLabel('Installation date', {exact: true}).inputValue();
+      await native.getByRole('checkbox', {name: 'Replacement installed and working', exact: true}).check();
+      await native.getByLabel('Installation outcome', {exact: true}).fill('   ');
+      await native.getByRole('button', {name: 'Confirm installation', exact: true}).click();
+      assert(await native.getByLabel('Installation outcome', {exact: true}).getAttribute('aria-invalid') === 'true', 'Native server validation did not identify invalid notes');
+      assert(await native.getByLabel('Installation date', {exact: true}).inputValue() === nativeDate, 'Native failure lost the date');
+      assert(await native.getByRole('checkbox', {name: 'Replacement installed and working', exact: true}).isChecked(), 'Native failure lost test confirmation');
+      assert(await native.getByRole('button', {name: 'Confirm installation', exact: true}).isEnabled(), 'Native validation disabled correction');
+      await native.getByLabel('Installation outcome', {exact: true}).fill('Installed and configured the replacement printer.\n\nDispatch confirmed that labels were readable.');
+      await native.getByRole('button', {name: 'Confirm installation', exact: true}).click();
+      assert(await state(native) === 'Completed', 'Native installation did not complete');
+      await native.getByRole('link', {name: 'Read installation', exact: true}).click();
+      assert(await native.locator('#installation-title').evaluate(node => node === document.activeElement), 'Native recorded-section link lost its target');
+      await native.getByRole('link', {name: 'Record progress note', exact: true}).click();
+      await native.getByLabel('Progress note', {exact: true}).fill('Retain this update after its form expires.');
+      // Simulate an expired attempt reference without changing the recorded request.
+      await native.locator('[name="attempt"]').evaluate(input => { input.value = 'expired-attempt'; });
+      await native.getByRole('button', {name: 'Record note', exact: true}).click();
+      assert((await native.locator('[data-form-status]').innerText()).includes('This activity form has expired.'), 'Expired form did not explain recovery');
+      assert(await native.getByLabel('Progress note', {exact: true}).inputValue() === 'Retain this update after its form expires.', 'Expired form lost attempted notes');
+      assert(await native.getByRole('button', {name: 'Record note', exact: true}).isDisabled(), 'Expired native attempt still offers submission');
+    } finally { await nativeContext.close(); }
+    checks.push('Native validation/correction and installation work; expired attempts retain entries with submission unavailable');
+    assert(errors.length === 0, errors.join('; '));
+    return {passed: true, checks};
+  } catch (error) {
+    throw new Error(JSON.stringify({stage, checks, url: page.url(), error: error.message, errors}));
+  }
+}

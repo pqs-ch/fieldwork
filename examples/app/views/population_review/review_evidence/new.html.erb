@@ -1,0 +1,36 @@
+<% title = @mode == 'upload' ? 'Add files' : 'Link existing evidence'; content_for :title, title %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Account reviews', population_review_reviews_path %></li><li><%= link_to @input[:captured][:name], population_review_review_input_path(@review[:id], @input[:id], view: @view) %></li><li><span aria-current="page"><%= title %></span></li></ol></nav>
+<header class="page-header"><div class="page-header-content"><h1><%= title %></h1><p class="page-header-description">Supporting material for <strong><%= @input[:captured][:name] %></strong>.</p></div></header>
+<nav class="section-navigation" aria-label="Add evidence"><ul>
+  <% {'upload' => 'Add files', 'link' => 'Link existing evidence'}.each do |mode, label| %><li><%= link_to label, population_review_review_new_evidence_path(@review[:id], @input[:id], mode: mode, view: @view), aria: {current: @mode == mode ? 'page' : nil} %></li><% end %>
+</ul></nav>
+<%= fieldwork_form_with model: @entry, url: population_review_review_evidence_path(@review[:id], @input[:id]), mode: :create, composition: @mode == 'upload' ? :mixed : :fixed, multipart: @mode == 'upload', baseline: @baseline, error: @error, id: 'evidence-form', class: 'content-surface', submit_label: @mode == 'upload' ? 'Upload and link files' : 'Link evidence', pending_label: @mode == 'upload' ? 'Uploading and linking files…' : 'Linking evidence…', cancel: population_review_review_input_path(@review[:id], @input[:id], view: @view, anchor: 'evidence-heading'), data: {draft_protection: title, evidence_upload: @mode == 'upload'} do |form| %>
+  <%= hidden_field_tag :attempt, @attempt %><%= hidden_field_tag :mode, @mode %><%= hidden_field_tag :view, @view %>
+  <% if @error %><p><%= link_to 'Inspect current account (new tab)', population_review_review_input_path(@review[:id], @input[:id], view: @view), target: '_blank', rel: 'noopener' %> without losing this draft.</p><% end %>
+  <section class="stack">
+    <% if @mode == 'upload' %>
+      <% if @entry.files&.any? %><p class="notice" data-tone="warning">The files were not saved. Select them again; your source, date and explanation are retained.</p><% end %>
+      <div class="file-selection stack" data-file-selection>
+        <div class="file-dropzone field" data-file-dropzone>
+          <span class="icon" data-icon="upload" aria-hidden="true"></span>
+          <label for="evidence-files">Files</label>
+          <p class="hint" id="evidence-files-hint">Choose files<span data-file-enhanced-hint hidden> or drag and drop them here</span>. Up to 5 TXT, CSV or PDF files, 2 MB each.</p>
+          <%= file_field_tag 'files[]', id: 'evidence-files', multiple: true, accept: '.txt,.csv,.pdf', required: true, aria: {describedby: 'evidence-files-hint evidence-files-error', invalid: @entry.errors[:files].any?} %>
+          <p class="field-error" id="evidence-files-error" data-field-error-for="evidence-files" <%= 'hidden' if @entry.errors[:files].empty? %>><%= @entry.errors.full_messages_for(:files).join('. ') %></p>
+        </div>
+        <p class="hint" data-file-empty>No files selected.</p>
+        <ul class="file-selection-list" data-file-list aria-label="Files selected for upload" hidden></ul>
+        <template data-file-template><li class="file-selection-item" data-file-item><div class="file-selection-item-header"><div><strong data-file-name></strong><p class="hint" data-file-size></p></div><button type="button" class="button" data-variant="quiet" data-file-remove disabled>Remove</button></div></li></template>
+        <p class="hint" role="status" data-file-status></p>
+      </div>
+      <%= fieldwork_field form, :source, label: 'Source', required: true, maxlength: 200, hint: 'The system, report or operating record the material came from. Applies to every file in this upload.' %>
+      <%= fieldwork_field form, :evidence_date, label: 'Evidence date', type: :date, required: true, max: Date.current.iso8601, hint: 'When the evidence was produced or the check was performed, rather than today’s upload date.' %>
+    <% else %>
+      <div data-searchable-selection data-search-label="Search evidence" data-placeholder="Choose existing evidence">
+        <%= fieldwork_select form, :artifact_id, evidence_choices, label: 'Existing evidence', include_blank: 'Choose evidence', required: true %>
+      </div>
+      <p class="hint">Link the existing original without uploading another copy. <%= link_to 'Browse evidence library (new tab)', population_review_evidence_index_path, target: '_blank', rel: 'noopener' %> to inspect files and where they are used.</p>
+    <% end %>
+    <%= fieldwork_field form, :purpose, label: 'What this evidence supports', type: :textarea, required: true, rows: 4, maxlength: 1200, hint: @mode == 'upload' ? 'Explain what these files demonstrate about this account. Applies to every selected file.' : 'Explain what this material demonstrates about this account; linking a file alone does not establish the assessment outcome.' %>
+  </section>
+<% end %>

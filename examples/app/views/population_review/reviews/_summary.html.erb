@@ -1,0 +1,6 @@
+<% counts = review_counts %>
+<dl class="review-counts" aria-label="Assessment counts">
+  <% {reviewed: 'Reviewed', excluded: 'Excluded', outstanding: 'Outstanding', findings: 'Open findings'}.each do |key, label| %>
+    <div><dt><%= label %></dt><dd><%= counts[key] %></dd></div>
+  <% end %>
+</dl>

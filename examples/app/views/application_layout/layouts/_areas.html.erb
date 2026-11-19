@@ -1,0 +1,7 @@
+<nav class="primary-navigation" data-orientation="horizontal" aria-label="<%= label %>">
+  <ul class="primary-navigation-list">
+    <% ApplicationLayout::WorkspaceData::AREAS.each do |destination| %>
+      <li><%= link_to destination[:url], aria: { current: navigation_current(destination) } do %><%= fieldwork_icon destination[:icon] %><span><%= destination[:label] %></span><% end %></li>
+    <% end %>
+  </ul>
+</nav>

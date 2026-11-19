@@ -1,0 +1,19 @@
+<% values = local_assigns.fetch(:values) %>
+<div class="section-stack">
+  <section class="stack" aria-labelledby="details-heading">
+    <header class="split"><h2 id="details-heading">Supplier details</h2><% if local_assigns[:change] %><%= link_to 'Change supplier details', details_multi_step_creation_draft_path(@draft[:id], return_to: 'review') %><% end %></header>
+    <dl class="description-list" data-density="compact">
+      <div><dt>Supplier</dt><dd><%= values['supplier'] %></dd></div>
+      <div><dt>Review owner</dt><dd><%= MultiStepCreation::ReviewRequestEntry::OWNERS[values['owner']] %></dd></div>
+    </dl>
+  </section>
+  <section class="stack" aria-labelledby="scope-heading">
+    <header class="split"><h2 id="scope-heading">Review scope</h2><% if local_assigns[:change] %><%= link_to 'Change review scope', scope_multi_step_creation_draft_path(@draft[:id], return_to: 'review') %><% end %></header>
+    <div class="rich-content"><%= simple_format(h(values['purpose'])) %></div>
+    <dl class="description-list" data-density="compact">
+      <div><dt>Due date</dt><dd><time datetime="<%= values['due_on'] %>"><%= Date.iso8601(values['due_on']).strftime('%-d %B %Y') %></time></dd></div>
+      <div><dt>Assessment approach</dt><dd><%= values['approach'] == 'independent' ? 'Independent assessment' : 'Internal review' %></dd></div>
+      <% if values['approach'] == 'independent' %><div><dt>Independent assessor</dt><dd><%= values['assessor'] %></dd></div><% end %>
+    </dl>
+  </section>
+</div>

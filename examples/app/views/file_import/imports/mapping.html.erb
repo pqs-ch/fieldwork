@@ -1,0 +1,35 @@
+<% content_for :width, 'wide'; content_for :title, 'Map supplier columns'; mapping_errors = @errors.to_h %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Supplier imports', file_import_imports_path %></li><li><span aria-current="page">Map columns</span></li></ol></nav>
+<header class="page-header"><div class="page-header-content"><h1>Map supplier columns</h1><p class="page-header-description"><%= @batch[:filename] %> · <%= pluralize(@batch[:rows].size, 'data row') %></p></div></header>
+<div class="content-surface grid">
+  <%= fieldwork_form_with url: mapping_file_import_import_path(@batch[:id]), local: true, mode: :create, id: 'column-mapping', submit_label: 'Validate rows', pending_label: 'Validating rows…', error: mapping_errors.any? ? 'Check the column mapping and try again.' : nil, data: { draft_protection: 'Column mapping' } do %>
+    <%= hidden_field_tag :revision, @batch[:revision] %>
+    <div class="error-summary" data-form-error-summary role="region" aria-labelledby="mapping-errors-title" tabindex="-1" <%= 'hidden' if mapping_errors.empty? %>>
+      <h2 id="mapping-errors-title">Check the column mapping</h2>
+      <ul data-form-error-list><% mapping_errors.each do |field, message| %><li><%= link_to "#{FileImport::SupplierImports::FIELDS.fetch(field)}: #{message}", "#column-#{field}" %></li><% end %></ul>
+    </div>
+    <p class="hint">Confirm one source column per field. Unmapped columns are ignored.</p>
+    <% FileImport::SupplierImports::FIELDS.each do |field, label| %>
+      <div class="field">
+        <label for="column-<%= field %>"><%= label %></label>
+        <select id="column-<%= field %>" name="columns[<%= field %>]" required aria-invalid="<%= mapping_errors.key?(field) %>" aria-describedby="column-<%= field %>-hint column-<%= field %>-error">
+          <option value="">Choose a source column</option>
+          <% @batch[:headers].each_with_index do |header, index| %><option value="<%= index %>" <%= 'selected' if @mapping[field] == index.to_s %>><%= header %> (column <%= index + 1 %>)</option><% end %>
+        </select>
+        <p class="hint" id="column-<%= field %>-hint"><%= { 'reference' => 'SUP- followed by three digits, for example SUP-101.', 'name' => 'Required, up to 80 characters.', 'email' => 'Valid email, up to 120 characters.' }.fetch(field) %></p>
+        <p class="field-error" id="column-<%= field %>-error" <%= 'hidden' unless mapping_errors[field] %>><%= mapping_errors[field] %></p>
+      </div>
+    <% end %>
+  <% end %>
+  <section class="stack" aria-labelledby="source-preview-title">
+    <h2 id="source-preview-title">Source preview</h2>
+    <div class="table-scroll" role="region" aria-label="Source column preview" tabindex="0">
+      <table class="data-table">
+        <caption>First data row as received</caption>
+        <thead><tr><th scope="col">Column</th><th scope="col" data-wrap="wrap">Source header</th><th scope="col" data-wrap="wrap">Example value</th></tr></thead>
+        <tbody><% @batch[:headers].each_with_index do |header, index| %><tr><th scope="row"><%= index + 1 %></th><td data-wrap="wrap"><%= header %></td><td data-wrap="wrap"><%= @batch[:rows].first[index].presence || 'Empty cell' %></td></tr><% end %></tbody>
+      </table>
+    </div>
+    <%= link_to 'Upload a corrected file', new_file_import_import_path %>
+  </section>
+</div>

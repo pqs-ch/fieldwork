@@ -1,0 +1,26 @@
+<header class="page-header">
+  <div class="page-header-content">
+    <p class="eyebrow">Library review</p>
+    <div class="page-header-title"><h1>Explore the examples</h1></div>
+    <p class="page-header-description">Use workflow references for complete business tasks, layout and form studies for composition, and interaction labs to exercise technical states. Include a screen’s URL when giving feedback.</p>
+  </div>
+</header>
+<section class="table-panel" aria-label="Maintained examples">
+  <div class="table-toolbar"><p><%= @examples.size %> examples · Open a workflow or read its review guide. Reset an example from its guide to start again.</p></div>
+  <div class="table-scroll" role="region" aria-label="Example catalogue" tabindex="0">
+    <table class="data-table review-catalogue">
+      <caption class="visually-hidden">Fieldwork example workflows and review guides</caption>
+      <thead><tr><th scope="col">Example</th><th scope="col" data-wrap="wrap">What to review</th><th scope="col">Start here</th></tr></thead>
+      <tbody>
+        <% @examples.each do |example| %>
+          <tr id="<%= example.slug %>">
+            <th scope="row" data-wrap="wrap"><div class="stack" data-gap="tight"><%= link_to example.title, review_example_path(example.slug) %><span class="hint"><%= example.kind %></span></div></th>
+            <td data-wrap="wrap"><div class="stack" data-gap="tight"><p><%= example.summary %></p><%= link_to 'Review guide', review_example_path(example.slug), aria: {label: "Review guide: #{example.title}"} %></div></td>
+            <td data-wrap="wrap"><div class="stack" data-gap="tight"><% example.links.each do |label, path| %><%= link_to label, "/#{example.slug}#{path}" %><% end %></div></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<p class="hint">Examples use synthetic data in local process memory. Restarting the server restores all starting data. Each example also works with JavaScript disabled, with its native workflow limits described in the review guide.</p>

@@ -1,0 +1,21 @@
+<div class="sidebar-layout" data-divider>
+  <section class="stack" aria-labelledby="purchase-values">
+    <h2 id="purchase-values">Purchase details</h2>
+    <dl class="description-list" data-density="compact">
+      <div><dt>Supplier</dt><dd><%= PurchaseRequest::PurchaseEntry::SUPPLIERS.fetch(@record[:supplier]) %></dd></div>
+      <div><dt>Price per unit</dt><dd><%= amount(@record[:unit_price_minor], @record[:currency]) %> per <%= @record[:unit] == 'items' ? 'item' : 'hour' %></dd></div>
+      <div><dt>Quantity</dt><dd><%= number_with_precision(BigDecimal(@record[:quantity_milli].to_s) / 1000, precision: 3, strip_insignificant_zeros: true) %> <%= @record[:unit] %></dd></div>
+      <div><dt>Discount rate</dt><dd><%= number_with_precision(BigDecimal(@record[:discount_bps].to_s) / 100, precision: 2, strip_insignificant_zeros: true) %>%</dd></div>
+      <div><dt>Delivery period</dt><dd><time datetime="<%= @record[:starts_on] %>"><%= Date.iso8601(@record[:starts_on]).strftime('%-d %B %Y') %></time> through <time datetime="<%= @record[:ends_on] %>"><%= Date.iso8601(@record[:ends_on]).strftime('%-d %B %Y') %></time> · <%= pluralize(@record[:days], 'inclusive day') %></dd></div>
+    </dl>
+  </section>
+  <section class="stack" aria-labelledby="purchase-breakdown-title">
+    <h2 id="purchase-breakdown-title">Cost breakdown</h2>
+    <dl class="description-list purchase-breakdown">
+      <div><dt>Line subtotal</dt><dd><%= amount(@record[:subtotal_minor], @record[:currency]) %></dd></div>
+      <div><dt>Discount amount</dt><dd><%= amount(@record[:discount_minor], @record[:currency]) %></dd></div>
+      <div><dt>Total</dt><dd class="purchase-total"><%= amount(@record[:total_minor], @record[:currency]) %></dd></div>
+    </dl>
+    <p class="hint">Subtotal is rounded half up to <%= amount(1, @record[:currency]) %>. Discount is calculated from that subtotal and rounded the same way, then subtracted. Total excludes tax; no currency conversion.</p>
+  </section>
+</div>

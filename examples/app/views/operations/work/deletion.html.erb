@@ -1,0 +1,21 @@
+<% content_for :title, 'Delete personal view' %>
+<header class="page-header">
+  <div class="page-header-content"><h1>Delete “<%= @selected[:name] %>”?</h1></div>
+</header>
+<div class="work-view-settings stack" data-gap="section">
+  <%= render 'view_context' %>
+  <p>Its saved settings will be removed. Tasks are unaffected; your working filters and columns remain as an unsaved query.</p>
+  <%= form_with url: operations_delete_work_view_path, local: true, class: 'stack' do %>
+    <%= render 'view_fields' %>
+    <% if @workspace[:default] == @selected[:id] %>
+      <label class="check">
+        <%= check_box_tag :replace_default, 'open', params[:replace_default] == 'open', required: true %>
+        Use All open work as my default after deleting this view
+      </label>
+    <% end %>
+    <div class="cluster">
+      <%= link_to 'Cancel', work_url_for(destination: :settings, page: @page), class: 'button' %>
+      <%= button_tag 'Delete view', class: 'button', disabled: @conflict, data: {intent: 'danger'} %>
+    </div>
+  <% end %>
+</div>

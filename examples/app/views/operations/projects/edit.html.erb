@@ -1,0 +1,18 @@
+<% creating = !@project.persisted?; content_for :title, creating ? 'New project' : 'Edit project' %>
+<header class="page-header"><div class="page-header-content"><nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/operations/projects">Projects</a></li><% unless creating %><li><a href="<%= operations_project_path(@project.id) %>"><%= @project.name.presence || 'Project details' %></a></li><% end %><li><span aria-current="page"><%= creating ? 'New project' : 'Edit' %></span></li></ol></nav><div class="page-header-title"><h1><%= creating ? 'New project' : 'Edit project' %></h1></div></div></header>
+<%= fieldwork_form_with model: @project, url: creating ? operations_projects_path : operations_project_path(@project.id), local: true, id: 'project-editor', class: 'project-editor', mode: creating ? :create : :edit, baseline: @baseline, submit_label: creating ? 'Create project' : 'Save changes', discard_label: 'Discard', cancel: creating ? operations_projects_path : operations_project_path(@project.id), error: @error, data: {draft_protection: 'Project details'} do |form| %>
+  <%= hidden_field_tag :base_version, params[:base_version].presence || @project.version %>
+  <div class="section-stack">
+  <fieldset class="stack"><legend>Project details</legend>
+    <%= fieldwork_field form, :name, label: 'Project name', required: true, maxlength: 100 %>
+    <%= fieldwork_field form, :description, type: :textarea, label: 'Description', rows: 4, required: true, hint: 'Describe the outcome and scope of this work.' %>
+  </fieldset>
+  <fieldset class="stack"><legend>Ownership and delivery</legend><div class="grid">
+    <%= fieldwork_select form, :owner, Operations::OperationsData::OWNERS, label: 'Project owner', hint: 'Coordinates delivery; does not change access permissions.' %>
+    <%= fieldwork_select form, :status, Operations::OperationsData::STATUSES, label: 'Status' %>
+    <%= fieldwork_field form, :due_on, type: :date, label: 'Due date', required: true %>
+    <%= fieldwork_field form, :budget, type: :number, label: 'Budget (CHF)', min: 0, step: '1', required: true %>
+  </div></fieldset>
+  </div>
+  <a href="<%= creating ? operations_projects_path : edit_operations_project_path(@project.id) %>" data-native-discard>Reload saved values</a>
+<% end %>

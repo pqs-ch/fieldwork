@@ -1,0 +1,14 @@
+<div class="cluster">
+  <%= link_to 'Back to work queue', work_url_for(page: @page) %>
+  <span class="badge"><%= @selected[:name] %></span>
+  <% if @modified %><span class="badge">Modified</span><% end %>
+</div>
+<% if @view_error %>
+  <p class="notice" data-tone="error" role="status" tabindex="-1" data-work-result><%= @view_error %></p>
+<% end %>
+<% if @conflict %>
+  <div class="cluster">
+    <%= link_to 'Reset to saved view', operations_work_index_path(view: @selected[:id]), class: 'button' %>
+    <%= link_to 'Save as…', work_url_for(destination: :new_view, page: @page), class: 'button' %>
+  </div>
+<% end %>

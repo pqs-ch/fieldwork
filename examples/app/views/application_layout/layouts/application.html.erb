@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= @title || 'Northstar' %> · Northstar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag 'fieldwork/ui', 'fieldwork/tables', 'data-turbo-track': 'reload' %>
+  <%= javascript_importmap_tags "application_layout/application" %>
+  <%= stylesheet_link_tag "review", "data-turbo-track": "reload" %>
+</head>
+<body>
+<%= render "review/navigation" %>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="application-layout" data-navigation="<%= @area == 'workplace' ? 'top-sidebar' : 'top' %>" style="--width-workspace: none">
+  <div class="application-layout-frame">
+    <header class="application-layout-top">
+      <div class="application-layout-top-inner">
+        <a class="brand" href="/application-layout/projects"><span>Northstar</span></a>
+        <%= render 'application_layout/layouts/areas', label: 'Application areas' %>
+        <nav class="application-layout-tools" aria-label="Account">
+          <%= link_to '/application-layout/account', class: 'button', data: { variant: 'quiet' }, aria: { current: @area == 'account' ? 'page' : nil } do %><%= fieldwork_icon 'user' %><span>Your account</span><% end %>
+        </nav>
+      </div>
+    </header>
+    <header class="application-layout-compact">
+      <div class="stack" data-gap="tight">
+        <div class="split">
+          <a class="brand" href="/application-layout/projects"><span>Northstar</span></a>
+          <nav class="application-layout-tools" aria-label="Compact account"><%= link_to '/application-layout/account', class: 'button', data: { variant: 'quiet' }, aria: { current: @area == 'account' ? 'page' : nil } do %><%= fieldwork_icon 'user' %><span>Your account</span><% end %></nav>
+        </div>
+        <%= render 'application_layout/layouts/areas', label: 'Compact application areas' %>
+        <% if @area == 'workplace' %><%= render 'application_layout/layouts/workplace', label: 'Compact workplace views', suffix: 'compact' %><% end %>
+      </div>
+    </header>
+    <% if @area == 'workplace' %>
+      <aside class="application-layout-sidebar">
+        <%= render 'application_layout/layouts/workplace', label: 'Workplace views', suffix: 'desktop' %>
+      </aside>
+    <% end %>
+    <div class="application-layout-content">
+      <main class="application-layout-main stack" data-gap="section" id="main" tabindex="-1">
+        <header class="page-header">
+          <div class="page-header-content">
+            <% if @area == 'workplace' %><p class="eyebrow">Workplace services</p><% end %>
+            <div class="page-header-title"><h1><%= @title %></h1></div>
+            <p class="page-header-description"><%= @description %></p>
+          </div>
+        </header>
+        <%= yield %>
+      </main>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<% content_for :title, 'Account reviews' %>
+<header class="page-header">
+  <div class="page-header-content">
+    <h1>Account reviews</h1>
+    <p class="page-header-description">Review service-account ownership, continued need and safeguards.</p>
+  </div>
+</header>
+<ul class="navigation-list" aria-label="Account reviews">
+  <% @store[:reviews].each_value do |review|; counts = review_counts(review) %>
+    <li>
+      <%= link_to population_review_review_path(review[:id]), aria: { labelledby: "review-#{review[:id]}-title", describedby: "review-#{review[:id]}-description" } do %>
+        <span class="navigation-list-content">
+          <span class="navigation-list-title" id="review-<%= review[:id] %>-title"><%= review[:title] %></span>
+          <span class="navigation-list-description" id="review-<%= review[:id] %>-description"><%= review[:scope] %></span>
+          <span class="navigation-list-description">Reviewer: Alex Morgan<% if review[:inputs] %> · <%= counts[:total].zero? ? 'No accounts captured' : "#{counts[:total] - counts[:outstanding]} of #{counts[:total]} assessments finished" %><% end %></span>
+        </span>
+        <span class="status-indicator" data-tone="<%= 'success' if review[:completed_at] %>"><%= review_status(review) %></span>
+        <span class="navigation-list-indicator" aria-hidden="true">→</span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

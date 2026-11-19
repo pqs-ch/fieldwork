@@ -1,0 +1,10 @@
+<nav class="primary-navigation" aria-label="<%= label %>">
+  <div>
+    <p class="primary-navigation-label" id="workplace-<%= suffix %>">Workplace</p>
+    <ul class="primary-navigation-list" aria-labelledby="workplace-<%= suffix %>">
+      <% ApplicationLayout::WorkspaceData::WORKPLACE_VIEWS.each do |destination| %>
+        <li><%= link_to destination[:url], aria: { current: request.path == destination[:url] ? 'page' : nil } do %><%= fieldwork_icon destination[:icon] %><span><%= destination[:label] %></span><% end %></li>
+      <% end %>
+    </ul>
+  </div>
+</nav>

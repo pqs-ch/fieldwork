@@ -1,0 +1,17 @@
+<% content_for :title, 'Save personal view' %>
+<header class="page-header">
+  <div class="page-header-content">
+    <h1>Save personal view</h1>
+    <p class="page-header-description">Save the applied filters, sort and column layout as a new view.</p>
+  </div>
+</header>
+<div class="work-view-settings stack" data-gap="section">
+  <p><%= link_to 'Back to work queue', work_url_for(page: @page) %></p>
+  <%= fieldwork_form_with url: operations_work_views_path, local: true, mode: :create,
+        baseline: {name: ''}, error: @view_error, submit_label: 'Save new view',
+        cancel: work_url_for(page: @page) do |form| %>
+    <%= render 'view_fields' %>
+    <%= fieldwork_field form, :name, label: 'View name', id: 'view_name', value: @view_name,
+          required: true, maxlength: 50, hint: 'A unique name of up to 50 characters. Only you can see this view.' %>
+  <% end %>
+</div>

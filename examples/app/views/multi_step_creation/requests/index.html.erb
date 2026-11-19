@@ -1,0 +1,29 @@
+<% content_for :title, 'Review requests' %>
+<header class="page-header"><div class="page-header-title"><h1>Review requests</h1></div><div class="page-header-actions"><%= button_to 'New review request', multi_step_creation_drafts_path, class: 'button', data: { intent: 'primary' } %></div></header>
+<% drafts = @store[:drafts].values.reject { |draft| draft[:record_id] } %>
+<div class="content-surface section-stack">
+  <section class="stack" aria-labelledby="drafts-heading">
+    <h2 id="drafts-heading">Drafts</h2>
+    <% if drafts.empty? %><p class="hint">No drafts.</p><% else %>
+      <ul class="navigation-list" role="list">
+        <% drafts.reverse.each do |draft| %>
+          <% ready = draft[:completed].size == 2; details_complete = draft[:completed].include?('details') %>
+          <% destination = ready ? review_multi_step_creation_draft_path(draft[:id]) : details_complete ? scope_multi_step_creation_draft_path(draft[:id]) : details_multi_step_creation_draft_path(draft[:id]) %>
+          <% next_action = ready ? 'Ready to create' : details_complete ? 'Complete review scope' : 'Complete supplier details' %>
+          <% context = [MultiStepCreation::ReviewRequestEntry::OWNERS[draft[:values]['owner']], ("Due #{Date.iso8601(draft[:values]['due_on']).strftime('%-d %b %Y')}" if draft[:completed].include?('scope')), next_action].compact.join(' · ') %>
+          <li><a href="<%= destination %>" aria-labelledby="draft-<%= draft[:id] %>-title" aria-describedby="draft-<%= draft[:id] %>-context"><span class="navigation-list-content"><span class="navigation-list-title" id="draft-<%= draft[:id] %>-title"><%= draft[:values]['supplier'].presence || 'Untitled supplier review' %></span><span class="navigation-list-description" id="draft-<%= draft[:id] %>-context"><%= context %></span></span><span class="navigation-list-indicator" aria-hidden="true">→</span></a></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+  <section class="stack" aria-labelledby="created-heading">
+    <h2 id="created-heading">Created requests</h2>
+    <% if @store[:records].empty? %><p class="hint">No requests created.</p><% else %>
+      <ul class="navigation-list" role="list">
+        <% @store[:records].values.reverse.each do |record| %>
+          <li><a href="<%= multi_step_creation_request_path(record[:id]) %>" aria-labelledby="request-<%= record[:id] %>-title" aria-describedby="request-<%= record[:id] %>-context"><span class="navigation-list-content"><span class="navigation-list-title" id="request-<%= record[:id] %>-title">RR-<%= record[:id] %> · <%= record[:values]['supplier'] %></span><span class="navigation-list-description" id="request-<%= record[:id] %>-context"><%= MultiStepCreation::ReviewRequestEntry::OWNERS[record[:values]['owner']] %> · Due <%= Date.iso8601(record[:values]['due_on']).strftime('%-d %b %Y') %> · <%= MultiStepCreation::ReviewRequestEntry.display('approach', record[:values]['approach']) %></span></span><span class="navigation-list-indicator" aria-hidden="true">→</span></a></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+</div>

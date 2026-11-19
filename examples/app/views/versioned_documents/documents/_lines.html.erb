@@ -1,0 +1,5 @@
+<ol class="comparison-lines">
+<% lines.each do |line| %>
+  <li class="comparison-line" data-change="<%= line[:kind] %>"><span class="comparison-number" aria-hidden="true"><%= line[:old] %></span><span class="comparison-number" aria-hidden="true"><%= line[:later] %></span><span class="comparison-marker"><span aria-hidden="true"><%= { 'added' => '+', 'removed' => '−', 'context' => ' ' }[line[:kind]] %></span><% if line[:kind] != 'context' %><span class="visually-hidden"><%= line[:kind].capitalize %>: </span><% end %></span><code><%= line_markup(line) %></code></li>
+<% end %>
+</ol>

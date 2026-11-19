@@ -1,0 +1,5 @@
+<% content_for :title, 'Check the updated draft' %>
+<header class="page-header"><div class="page-header-content"><h1>Check the updated draft</h1><p class="page-header-description"><%= @draft[:values]['supplier'] %></p></div></header>
+<p class="notice" data-tone="warning" role="status" tabindex="-1" data-result>The draft changed after this check page was opened. No request was created.</p>
+<p>Review the latest saved answers before confirming. Any unfinished step must be completed first.</p>
+<p><%= link_to 'Check latest saved answers', review_multi_step_creation_draft_path(@draft[:id]), class: 'button', data: { intent: 'primary' } %></p>

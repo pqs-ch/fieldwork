@@ -1,0 +1,4 @@
+<% content_for :title, 'Draft unavailable' %>
+<header class="page-header"><div class="page-header-content"><h1>Draft unavailable</h1></div></header>
+<p class="notice" data-tone="warning" role="status" tabindex="-1" data-result>This draft is no longer available in this browser session. No request was created by this action.</p>
+<p>This demonstration keeps drafts in server memory. They expire when the server restarts; another browser session cannot open them.</p><p><%= link_to 'Return to Review requests', multi_step_creation_requests_path, class: 'button' %></p>

@@ -1,0 +1,22 @@
+<section class="table-panel" aria-label="<%= @title %>">
+  <div class="table-scroll" role="region" aria-label="<%= @title %> results" tabindex="0">
+    <table class="data-table">
+      <caption class="visually-hidden"><%= @title %></caption>
+      <thead><tr><% @columns.each do |column| %><%= tag.th column[:label], scope: 'col', data: { wrap: column[:wrap], align: column[:align] } %><% end %></tr></thead>
+      <tbody>
+        <% @rows.each do |row| %>
+          <tr><% row.each_with_index do |value, index| %>
+            <% column = @columns.fetch(index) %>
+            <%= content_tag(column[:row_header] ? :th : :td, scope: column[:row_header] ? 'row' : nil, data: { wrap: column[:wrap], align: column[:align] }) do %>
+              <% if column[:status] %><span class="status-indicator"><%= value %></span><% else %><%= value %><% end %>
+            <% end %>
+          <% end %></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <footer class="table-footer">
+    <p><%= pluralize @rows.length, @area == 'projects' ? 'project' : action_name == 'requests' ? 'open request' : action_name == 'scheduled' ? 'scheduled visit' : 'asset' %></p>
+    <% if action_name == 'requests' %><a href="/application-layout/workplace/scheduled">View scheduled visits</a><% end %>
+  </footer>
+</section>

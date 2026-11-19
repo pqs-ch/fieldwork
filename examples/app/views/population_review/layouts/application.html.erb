@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : 'Account reviews' %> · Assurance</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="turbo-cache-control" content="no-cache">
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag 'fieldwork/ui', 'fieldwork/tables', 'reviews', 'data-turbo-track': 'reload' %>
+  <%= javascript_importmap_tags "population_review/application" %>
+  <%= stylesheet_link_tag "review", "data-turbo-track": "reload" %>
+</head>
+<body>
+<%= render "review/navigation" %>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="application-layout" data-navigation="top"><div class="application-layout-frame">
+  <% destinations = [['Account reviews', population_review_reviews_path, controller_name != 'evidence', 'list-todo'], ['Evidence library', population_review_evidence_index_path, controller_name == 'evidence', 'file-text']] %>
+  <header class="application-layout-compact"><a class="brand" href="/population-review/reviews"><span>Assurance</span></a><div class="stack"><nav class="primary-navigation" aria-label="Compact workspace"><ul class="primary-navigation-list"><% destinations.each do |label, path, current, icon| %><li><%= link_to path, aria: {current: current ? (action_name == 'index' ? 'page' : 'true') : nil} do %><%= fieldwork_icon icon %><span><%= label %></span><% end %></li><% end %></ul></nav></div></header>
+  <header class="application-layout-top"><div class="application-layout-top-inner"><a class="brand" href="/population-review/reviews"><span>Assurance</span></a><nav class="primary-navigation" data-orientation="horizontal" aria-label="Workspace"><ul class="primary-navigation-list"><% destinations.each do |label, path, current, icon| %><li><%= link_to path, aria: {current: current ? (action_name == 'index' ? 'page' : 'true') : nil} do %><%= fieldwork_icon icon %><span><%= label %></span><% end %></li><% end %></ul></nav></div></header>
+  <div class="application-layout-content"><main class="application-layout-main page stack <%= 'review-task-page' if controller_name == 'reviews' && %w[assessment finding completion record_assessment record_finding complete details].include?(action_name) %>" data-gap="section" id="main" tabindex="-1" data-width="<%= %w[show index].include?(action_name) ? 'wide' : 'default' %>">
+    <% if flash[:notice] %><p class="notice" data-tone="success" role="status" id="review-result" tabindex="-1"><%= flash[:notice] %> <% if flash[:saved_input] && @review %><%= link_to 'Read saved result', population_review_review_input_path(@review[:id], flash[:saved_input], view: @view) %><% end %></p><% end %>
+    <%= yield %>
+  </main></div>
+</div></div>
+</body></html>

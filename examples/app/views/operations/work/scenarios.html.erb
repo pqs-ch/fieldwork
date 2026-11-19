@@ -1,0 +1,18 @@
+<% content_for :title, 'Work queue review scenarios' %>
+<header class="page-header">
+  <div class="page-header-content">
+    <h1>Work queue review scenarios</h1>
+    <p class="page-header-description">Exercise recovery without changing the saved view.</p>
+  </div>
+</header>
+<div class="work-view-settings stack" data-gap="section">
+  <%= render 'view_context' %>
+  <section class="stack" aria-labelledby="failure-title">
+    <h2 id="failure-title">View save failure</h2>
+    <p>Make the next view save fail once. The rejected save should retain your name, applied query and columns; a retry should succeed.</p>
+    <%= form_with url: operations_work_scenario_path, local: true do %>
+      <%= render 'view_fields' %>
+      <%= button_tag 'Fail next view save once', class: 'button' %>
+    <% end %>
+  </section>
+</div>

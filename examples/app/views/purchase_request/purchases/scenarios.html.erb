@@ -1,0 +1,10 @@
+<% content_for :title, 'Purchase request review scenarios' %>
+<header class="page-header"><div class="page-header-title"><h1>Purchase request review scenarios</h1></div></header>
+<section class="content-surface stack" aria-labelledby="confirmation-failure-title">
+  <h2 id="confirmation-failure-title">Temporary confirmation failure</h2>
+  <p>The next confirmation in this browser workspace will fail once. Its reviewed values remain available for retry, and only one request is recorded.</p>
+  <%= form_with url: scenario_purchase_request_purchases_path, local: true do %>
+    <%= hidden_field_tag :attempt, @attempt %><%= hidden_field_tag :revision, @draft[:revision] %>
+    <div class="form-actions"><%= link_to 'Return to review', review_purchase_request_purchases_path(attempt: @attempt, revision: @draft[:revision]), class: 'button' %><%= button_tag 'Fail next confirmation once', class: 'button' %></div>
+  <% end %>
+</section>

@@ -1,0 +1,80 @@
+<% content_for :title, entry_title
+   blocked = @kind == 'completion' && (@review[:inputs] || []).any? { |input| !ready?(input) }
+   current = @input && (@kind == 'finding' ? PopulationReview::PopulationReviews.latest(@input)[:facts] : @store[:sources].fetch(@input[:id]))
+   counts = review_counts %>
+<header class="page-header">
+  <div class="page-header-content">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Account reviews', population_review_reviews_path %></li><li><%= link_to @review[:title], review_back_path %></li><li><span aria-current="page"><%= entry_title %></span></li></ol></nav>
+    <div class="page-header-title"><h1><%= entry_title %></h1></div>
+  </div>
+</header>
+
+<div class="content-surface section-stack">
+<% if @input %>
+  <div class="grid" data-gap="section">
+  <section class="stack" aria-labelledby="subject-title">
+    <header class="stack" data-gap="tight">
+      <div>
+        <h2 id="subject-title"><%= current[:name] %></h2>
+      </div>
+      <% if @input[:assessments].any? %><%= link_to 'Recorded assessments (new tab)', population_review_review_input_path(@review[:id], @input[:id], view: @view), target: '_blank', rel: 'noopener', class: 'hint' %><% end %>
+    </header>
+    <div>
+      <dl class="description-list" data-density="compact">
+        <div><dt><%= @kind == 'finding' ? 'Owner assessed' : 'Current owner' %></dt><dd><%= current[:owner] %></dd></div>
+        <div><dt>Operating scope</dt><dd class="review-prose"><%= current[:scope] %></dd></div>
+      </dl>
+    </div>
+  </section>
+  <% if @kind == 'assessment' %>
+    <section class="stack">
+      <h2>Supporting evidence</h2><div class="stack"><% if PopulationReview::ReviewEvidence.active(@input).empty? %><p class="hint">No files linked. Describe the operating evidence you checked in the assessment basis.</p><% else %><ul class="attachment-list" aria-label="Evidence for this assessment"><% PopulationReview::ReviewEvidence.active(@input).each do |use| %><%= render 'population_review/evidence/file', artifact: @store[:evidence].fetch(use[:artifact_id]), purpose: use[:purpose] %><% end %></ul><% end %><p class="hint"><%= link_to 'Manage evidence (new tab)', population_review_review_input_path(@review[:id], @input[:id], view: @view, anchor: 'evidence-heading'), target: '_blank', rel: 'noopener' %>. Changes require a fresh assessment form.</p></div></section>
+  <% end %>
+  <% if @kind == 'finding' %>
+    <section class="stack" data-gap="tight"><h2 class="review-section-title">Discrepancy identified</h2><p class="review-prose"><%= PopulationReview::PopulationReviews.latest(@input)[:notes] %></p></section>
+  <% end %>
+  </div>
+  <% if PopulationReview::PopulationReviews.changed?(@store, @review, @input) %>
+    <p class="notice" data-tone="warning"><%= @kind == 'assessment' ? 'Account facts or supporting evidence changed since the last assessment. Check the current facts above and record a fresh conclusion.' : 'Account facts changed since the assessment. Reassess the account before recording a finding.' %> Earlier results are retained. <%= link_to 'Compare assessed and current values (new tab)', comparison_path(PopulationReview::PopulationReviews.latest(@input)), target: '_blank', rel: 'noopener' %>.</p>
+  <% end %>
+<% else %>
+  <section class="stack" aria-labelledby="completion-summary-heading">
+    <h2 id="completion-summary-heading">Review summary</h2>
+    <p><%= @review[:scope] %>.</p>
+    <%= render 'summary' %>
+    <% if counts[:findings].positive? %><p><%= pluralize(counts[:findings], 'finding') %> will remain open. <%= link_to 'View findings (new tab)', population_review_review_path(@review[:id], view: 'all', anchor: 'follow-up-heading'), target: '_blank', rel: 'noopener' %>.</p><% end %>
+    <% if (@review[:inputs] || []).empty? %><p>No accounts were captured. Explain which independent operating sources you checked, when you checked them, and why no accounts are in scope.</p><% end %>
+  </section>
+  <%= render 'blockers' %>
+<% end %>
+
+<% if @needs_fresh_form %>
+  <% if @input && PopulationReview::PopulationReviews.latest(@input) && !PopulationReview::PopulationReviews.changed?(@store, @review, @input) %><p><%= link_to 'Compare recorded and current basis (new tab)', comparison_path(PopulationReview::PopulationReviews.latest(@input)), target: '_blank', rel: 'noopener' %></p><% end %>
+  <p class="hint" id="fresh-form-guidance"><%= link_to 'Review latest state (new tab)', review_back_path, target: '_blank', rel: 'noopener' %> without losing your entered values. Open a fresh form from the latest state.</p>
+<% end %>
+<% destination = @kind == 'assessment' ? population_review_review_assessment_path(@review[:id], @input[:id]) : @kind == 'finding' ? population_review_review_finding_path(@review[:id], @input[:id]) : complete_population_review_review_path(@review[:id]) %>
+<%= fieldwork_form_with model: @entry, url: destination, mode: :create, baseline: @baseline, error: @error, cancel: review_back_path, id: 'review-entry', data: { draft_protection: entry_title }, actions: ->(_form) { button_tag(entry_submit, type: 'submit', class: 'button', disabled: blocked || @needs_fresh_form, data: { intent: 'primary' }, aria: { describedby: @needs_fresh_form ? 'fresh-form-guidance' : blocked ? 'blockers-heading' : nil }) } do |form| %>
+  <%= hidden_field_tag :attempt, @attempt %>
+  <%= hidden_field_tag :view, @view %>
+  <section class="<%= @kind == 'assessment' ? 'grid' : 'stack' %>">
+    <% if @kind == 'assessment' %>
+      <fieldset class="review-outcomes">
+        <legend>Assessment outcome</legend>
+        <% PopulationReview::PopulationReviews::CHOICES.each do |value, label| %>
+          <label class="check">
+            <%= form.radio_button :choice, value, required: true, aria: { invalid: @entry.errors[:choice].any?, labelledby: "outcome-#{value}-label", describedby: "outcome-#{value}-hint outcome-error" } %>
+            <span><strong id="outcome-<%= value %>-label"><%= label %></strong><span class="hint" id="outcome-<%= value %>-hint"><%= {'satisfactory' => 'Ownership, continued need and safeguards are supported by the evidence.', 'discrepancy' => 'An issue needs a finding, treatment owner and plan.', 'excluded' => 'This account does not belong in the review scope.'}.fetch(value) %></span></span>
+          </label>
+        <% end %>
+        <p class="field-error" id="outcome-error" data-field-error-for="review_entry_choice_satisfactory" <%= 'hidden' if @entry.errors[:choice].empty? %>><%= @entry.errors.full_messages_for(:choice).join('. ') %></p>
+      </fieldset>
+      <%= fieldwork_field form, :notes, type: :textarea, label: 'Assessment basis', rows: 8, required: true, maxlength: 2000, hint: 'Evidence checked and reasons for this outcome. Explain any exclusion.' %>
+    <% elsif @kind == 'finding' %>
+      <%= fieldwork_field form, :owner, label: 'Treatment owner', required: true, maxlength: 100, hint: 'The person responsible for following up this issue.' %>
+      <%= fieldwork_field form, :notes, type: :textarea, label: 'Finding and treatment plan', rows: 6, required: true, maxlength: 2000, hint: 'Explain the problem, the expected position and the planned action. Recording a plan leaves treatment open.' %>
+    <% else %>
+      <%= fieldwork_field form, :notes, type: :textarea, label: (@review[:inputs] || []).empty? ? 'Coverage and conclusion' : 'Review conclusion', rows: 6, required: true, maxlength: 2000, hint: 'Summarize what was checked and your conclusion. Identify any findings whose treatment is still open.' %>
+    <% end %>
+  </section>
+<% end %>
+</div>

@@ -1,0 +1,5 @@
+<section class="table-panel" aria-label="People directory"><div class="table-scroll" role="region" aria-label="People directory" tabindex="0"><table class="data-table">
+  <caption class="visually-hidden">People, roles, teams and email addresses</caption>
+  <thead><tr><th scope="col">Person</th><th scope="col">Role</th><th scope="col">Team</th><th scope="col">Email</th></tr></thead>
+  <tbody><% ApplicationLayout::WorkspaceData::PEOPLE.each do |name, role, team, email| %><tr><th scope="row"><%= name %></th><td><%= role %></td><td><%= team %></td><td><a href="mailto:<%= email %>"><%= email %></a></td></tr><% end %></tbody>
+</table></div></section>

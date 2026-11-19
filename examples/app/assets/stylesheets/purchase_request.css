@@ -1,0 +1,3 @@
+.purchase-page { --width-page: 60rem; }
+.purchase-breakdown dd { font-variant-numeric: tabular-nums; }
+.purchase-breakdown .purchase-total { font-size: var(--text-title); font-weight: 650; }

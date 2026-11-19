@@ -1,0 +1,34 @@
+<header class="page-header"><div class="page-header-content"><h1>Edit document draft</h1><p>Saving records a draft revision. Published version 1.1 remains separate.</p><p>Editing from saved revision <%= @base %>.</p></div></header>
+<p class="notice">Preview does not save. For a rendered unsaved sample, change “three days” to “two days”. History and comparisons open in another tab to preserve this editor. Without JavaScript, use Save draft before leaving; Cancel leaves without saving.</p>
+<div class="cluster"><a href="<%= example_url('history') %>" target="_blank" rel="noopener">Browse saved history (new tab)</a><a href="<%= example_url('compare', earlier: @published[:id], later: @base) %>" target="_blank" rel="noopener">Compare saved draft with publication (new tab)</a></div>
+<% baseline = @baseline_revision || @draft %>
+<%= fieldwork_form_with scope: :document, url: example_url('save').split('?').first, id: 'document-editor', local: true,
+    baseline: {body: baseline[:body], summary: ''}, error: @error,
+    submit_label: 'Save draft', discard_label: 'Discard', cancel: example_url, actions_position: :start, class: 'content-surface',
+    data: { document_editor: true } do |form| %>
+  <%= hidden_field_tag :base_revision, @base %>
+  <%= fieldwork_field form, :body, type: :textarea, label: 'Markdown source', rows: 20,
+      value: @values[:body], hint: 'Your unsaved text remains here after preview or a failed save.' %>
+  <div class="field">
+    <%= form.label :summary, 'Change summary' %>
+    <%= form.text_field :summary, value: @values[:summary], aria: { invalid: @summary_error.present?, describedby: 'document-summary-error' } %>
+    <p class="field-error" id="document-summary-error" data-field-error-for="document_summary" <%= 'hidden' unless @summary_error %>><%= @summary_error %></p>
+  </div>
+  <div class="cluster">
+    <button class="button" type="submit" name="intent" value="preview" data-editing-allow-unchanged>Preview submitted text</button>
+    <a href="<%= example_url('edit') %>" data-native-discard>Discard unsaved edits</a>
+    <button class="button" type="submit" name="intent" value="stale">Simulate stale save</button>
+  </div>
+  <% if @conflict %>
+    <section class="notice" data-tone="error" aria-labelledby="conflict-title"><h2 id="conflict-title">Newer saved revision <%= @latest[:id] %></h2>
+    <p>Review the newer saved content before retrying. This example recovery creates a new revision with your submitted text; it never modifies history.</p>
+    <a href="<%= example_url('compare', earlier: @base, later: @latest[:id]) %>" target="_blank" rel="noopener">Inspect intervening saved changes (new tab)</a>
+    <button class="button" type="submit" name="recovery_base" value="<%= @latest[:id] %>">Save submitted text as a new revision based on <%= @latest[:id] %></button>
+    </section>
+  <% end %>
+<% end %>
+<% if @preview %>
+<section class="stack" aria-labelledby="preview-title"><h2 id="preview-title">Rendered preview · <%= @values[:body] == baseline[:body] ? 'Saved text' : 'Unsaved text — not saved or published' %></h2>
+<% unless VersionedDocuments::DocumentExamples.renderable?(@values[:body]) %><p class="hint">This synthetic app has authored rendering for its fixture Markdown only. Arbitrary edits are escaped source; a consuming application supplies its own renderer and sanitizer.</p><% end %>
+<article class="rich-content" aria-labelledby="preview-title"><%= @preview.html_safe %></article></section>
+<% end %>

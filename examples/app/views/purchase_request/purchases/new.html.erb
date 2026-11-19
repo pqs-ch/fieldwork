@@ -1,0 +1,41 @@
+<% content_for :title, 'New purchase request' %>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><%= link_to 'Purchase requests', purchase_request_purchases_path %></li><li><span aria-current="page">Draft</span></li></ol></nav>
+<header class="page-header">
+  <div class="page-header-content"><h1>New purchase request</h1><p class="page-header-description">Reviewing saves your draft. Confirmation records the request.</p></div>
+</header>
+<%= fieldwork_form_with model: @entry, scope: :entry, url: preview_purchase_request_purchases_path, local: true, id: 'purchase-form', mode: :create, baseline: @draft[:values], class: 'content-surface', data: {draft_protection: 'Purchase draft'}, submit_label: 'Review request', pending_label: 'Reviewing request…', cancel: purchase_request_purchases_path do |form| %>
+  <%= hidden_field_tag :attempt, @attempt %><%= hidden_field_tag :revision, @draft[:revision] %>
+  <div class="error-summary" data-form-error-summary role="region" tabindex="-1" aria-labelledby="purchase-errors" <%= 'hidden' unless @entry.errors.any? %>>
+    <h2 id="purchase-errors">Check the request details</h2>
+    <ul data-form-error-list>
+      <% @entry.errors.attribute_names.each do |field| %>
+        <li><%= link_to "#{PurchaseRequest::PurchaseEntry::LABELS.fetch(field.to_s)}: #{@entry.errors[field].join(' ')}", "#entry_#{field}" %></li>
+      <% end %>
+    </ul>
+  </div>
+  <div class="section-stack">
+    <section class="stack" aria-label="Supplier">
+      <%= fieldwork_select form, :supplier, PurchaseRequest::PurchaseEntry::SUPPLIERS.map { |id, label| [label, id] }, label: 'Supplier', required: true %>
+      <p class="hint"><%= link_to 'Supplier contacts (opens in a new tab)', purchase_request_suppliers_path, target: '_blank', rel: 'noopener' %></p>
+    </section>
+    <fieldset class="stack" aria-describedby="amounts-hint">
+      <legend>Amounts</legend>
+      <p class="hint" id="amounts-hint">Use a dot or comma for decimals. No grouping, signs or exponents.</p>
+      <div class="grid">
+        <%= fieldwork_select form, :currency, PurchaseRequest::PurchaseEntry::CURRENCIES.keys, label: 'Currency', hint: 'Changing currency keeps the price; no conversion.' %>
+        <%= fieldwork_field form, :unit_price, label: 'Price per unit', inputmode: 'decimal', required: true, maxlength: 16, hint: '0–1,000,000. CHF/USD: up to 2 decimals. JPY: whole amounts only.' %>
+        <%= fieldwork_field form, :discount, label: 'Discount (%)', inputmode: 'decimal', required: true, maxlength: 16, hint: '0–100, up to 2 decimals. Enter 7.5 for 7.5%.' %>
+        <%= fieldwork_field form, :quantity, label: 'Quantity', inputmode: 'decimal', required: true, maxlength: 16, hint: 'Hours: 0.001–1,000, up to 3 decimals. Items: 1–1,000 whole items.' %>
+        <%= fieldwork_select form, :unit, [['Hours', 'hours'], ['Items', 'items']], label: 'Unit', hint: 'Changing unit keeps the quantity; no conversion.' %>
+      </div>
+    </fieldset>
+    <fieldset class="stack" aria-describedby="period-hint">
+      <legend>Delivery period</legend>
+      <p class="hint" id="period-hint">Both calendar dates are included, up to 366 days. Same-day delivery is allowed.</p>
+      <div class="grid">
+        <%= fieldwork_field form, :starts_on, type: :date, label: 'Starts on', required: true %>
+        <%= fieldwork_field form, :ends_on, type: :date, label: 'Ends on', required: true %>
+      </div>
+    </fieldset>
+  </div>
+<% end %>
