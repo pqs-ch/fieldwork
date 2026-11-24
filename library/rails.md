@@ -6,11 +6,11 @@ Fieldwork supplies UI patterns, markup, styles, Rails form helpers, and optional
 
 Fieldwork targets Rails 8.1 with ERB, Propshaft, importmap, and Turbo. Turbo must be installed and loaded by the application JavaScript.
 
-From the application repository root, add Fieldwork as a Git submodule and check out a release. The example uses `v0.3.0`. Anyone fetching the submodule, including CI, needs Git access to the Fieldwork repository.
+From the application repository root, add Fieldwork as a Git submodule and check out a release. The example uses `v0.3.1`. Anyone fetching the submodule, including CI, needs Git access to the Fieldwork repository.
 
 ```sh
 git submodule add git@github.com:pqs-ch/fieldwork.git vendor/fieldwork
-git -C vendor/fieldwork checkout --detach v0.3.0
+git -C vendor/fieldwork checkout --detach v0.3.1
 ```
 
 Add the path dependency to the application's `Gemfile`. If migrating an existing installation, replace the old GitHub Packages source block for Fieldwork and remove any Fieldwork-specific registry credentials from local and CI configuration.

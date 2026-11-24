@@ -70,6 +70,10 @@ Use visible selection labels rather than a count alone; long labels wrap. For sh
 
 The native select remains the submitted source of truth. Enhancement visually hides it and routes label/error focus to the trigger. A changed committed choice emits bubbling `input`/`change`; search text has no submitted value and belongs to no form. This preserves `enhanceForm` validation, change tracking, pending fieldsets, and Save/Discard baselines.
 
+Reuse an existing `.field-error` associated by `data-field-error-for` or `aria-describedby`, including the Rails helper's initially hidden error. With `enhanceForm`, the form owns validation messages and correction; the picker mirrors that same error and routes native-field focus to its visible trigger. Either initialization order is supported. Without the form controller, the picker handles native validation itself. Existing server errors remain until correction or reset, and hint/error IDs appear only once in the trigger's descriptions.
+
+Destroy preserves existing error nodes, their current messages and native descriptions. A picker-generated error is removed unless the form controller has adopted it into the native field's `aria-describedby`; adopted errors remain for native use, re-enhancement and Turbo caching. Destroy does not reinstate a server error that the user has already corrected.
+
 ### Local and application-supplied results
 
 The default filters supplied labels/descriptions case-insensitively and shows at most 20 results. For larger sets, replace the default initializer below; `applicationLookup` is application-owned:

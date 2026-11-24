@@ -21,9 +21,8 @@
           <input id="project-title" name="project[title]" value="<%= @draft['title'] %>" required aria-describedby="project-title-error">
           <p class="field-error" id="project-title-error" <%= 'hidden' unless @errors['title'] %>><%= @errors['title'] %></p>
         </div>
-        <div class="field" data-searchable-selection data-label="Owner">
-          <label for="project-owner">Owner</label>
-          <select id="project-owner" name="project[owner_id]"><% @people.each do |id, name| %><option value="<%= id %>" <%= 'selected' if id == @draft['owner_id'] %>><%= name %></option><% end %></select>
+        <div data-searchable-selection data-label="Owner">
+          <%= fieldwork_select f, :owner_id, @people.map { |id, name| [name, id] }, label: "Owner", id: "project-owner", name: "project[owner_id]", required: true, include_blank: "Choose an owner", hint: "The person responsible for this project.", select_options: { selected: @draft['owner_id'] } %>
         </div>
       </div>
       <div class="field" data-searchable-selection data-label="Reviewers" data-search-label="Search reviewers" data-people-lookup>

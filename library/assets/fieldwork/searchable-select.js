@@ -1,5 +1,6 @@
 // Single or multiple selection over a native select. Applications own data, transport, and saving.
 import { createAttributeSnapshot } from './internal/attributes.js';
+import { findFieldError, formFieldErrors } from './internal/field-errors.js';
 import {
   viewportBounds,
   outsideViewport,
@@ -68,9 +69,13 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
   clear.dataset.variant = 'quiet';
   clear.setAttribute('aria-label', `Clear ${name}`);
   controls.append(trigger, clear);
-  const error = make('p', 'field-error');
-  error.id = `${id}-error`;
-  error.hidden = true;
+  const existingError = findFieldError(select, select.form || root);
+  const error = existingError || make('p', 'field-error');
+  if (!existingError) {
+    error.id = `${id}-error`;
+    error.dataset.fieldErrorFor = select.id;
+    error.hidden = true;
+  }
   const panel = make('div', 'searchable-selection-popup');
   panel.id = `${id}-popup`;
   panel.setAttribute('popover', 'auto');
@@ -107,8 +112,9 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
   const selectionStatus = make('p', 'visually-hidden');
   selectionStatus.setAttribute('role', 'status');
   const selectedRows = new Map();
-  if (multiple) select.after(controls, selectedList, selectionStatus, error);
-  else select.after(controls, error);
+  if (multiple) select.after(controls, selectedList, selectionStatus);
+  else select.after(controls);
+  if (!existingError) (multiple ? selectionStatus : controls).after(error);
   select.classList.add('visually-hidden');
   select.tabIndex = -1;
   select.setAttribute('aria-hidden', 'true');
@@ -168,9 +174,8 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
       'aria-invalid',
       error.hidden ? select.getAttribute('aria-invalid') || 'false' : 'true'
     );
-    const description = [select.getAttribute('aria-describedby'), error.hidden ? '' : error.id]
-      .filter(Boolean)
-      .join(' ');
+    const description = [...new Set(`${select.getAttribute('aria-describedby') || ''} ${error.hidden ? '' : error.id}`
+      .split(/\s+/).filter(Boolean))].join(' ');
     if (description) trigger.setAttribute('aria-describedby', description);
     else trigger.removeAttribute('aria-describedby');
     if (trigger.disabled) close();
@@ -336,6 +341,12 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
       select.dispatchEvent(new Event('change', { bubbles: true }));
     } finally { committing = false; }
   }
+  function clearError() {
+    if (formFieldErrors.has(select)) return;
+    if (!error.hidden) select.removeAttribute('aria-invalid');
+    error.hidden = true;
+    error.textContent = '';
+  }
   function removeSelection(value) {
     if (select.matches(':disabled')) return;
     const option = [...select.options].find(option => option.value === value);
@@ -343,7 +354,7 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
     const rows = [...selectedList.children];
     const index = rows.indexOf(selectedRows.get(value));
     option.selected = false;
-    error.hidden = true;
+    clearError();
     sync();
     notify();
     selectionStatus.textContent = `${option.label} removed. ${select.selectedOptions.length} selected.`;
@@ -355,7 +366,7 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
     if (multiple && !item) {
       for (const option of [...select.selectedOptions])
         if (!option.matches(':disabled')) option.selected = false;
-      error.hidden = true;
+      clearError();
       sync(); notify(); close(true);
       selectionStatus.textContent = `${select.selectedOptions.length} selected.`;
       return;
@@ -375,7 +386,7 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
     const changed = multiple || select.value !== value;
     if (multiple) option.selected = !option.selected;
     else select.value = value;
-    error.hidden = true;
+    clearError();
     sync();
     if (!multiple) close(true);
     if (changed) notify();
@@ -473,22 +484,28 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
     if (isOpen() && event.target !== trigger && !panel.contains(event.target)) close();
   });
   on(select, 'change', () => {
-    error.hidden = true;
+    clearError();
     if (!multiple || !committing) close();
     sync();
   });
   on(select, 'focus', () => trigger.focus());
   on(select, 'invalid', event => {
     event.preventDefault();
-    error.textContent = multiple ? 'Choose at least one option.' : 'Choose an option.';
-    error.hidden = false;
+    const managed = formFieldErrors.get(select);
+    if (managed) managed.validate();
+    else {
+      error.textContent = select.validity.valueMissing
+        ? multiple ? 'Choose at least one option.' : 'Choose an option.'
+        : select.validationMessage;
+      error.hidden = false;
+    }
     sync();
     trigger.focus();
   });
   const reset = () =>
     queueMicrotask(() => {
       if (active) {
-        error.hidden = true;
+        clearError();
         close();
         sync();
       }
@@ -504,6 +521,7 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
         record =>
           record.target === select ||
           select.contains(record.target) ||
+          record.target === error || error.contains(record.target) ||
           record.target.tagName === 'FIELDSET'
       )
     )
@@ -511,7 +529,7 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
   });
   observer.observe(select.form || root, {
     attributes: true,
-    attributeFilter: ['disabled', 'required', 'aria-invalid', 'aria-describedby'],
+    attributeFilter: ['disabled', 'required', 'aria-invalid', 'aria-describedby', 'hidden'],
     childList: true,
     subtree: true,
     characterData: true,
@@ -542,7 +560,10 @@ export function enhanceSearchableSelect(root, { loadOptions } = {}) {
       controls.remove();
       selectedList.remove();
       selectionStatus.remove();
-      error.remove();
+      // enhanceForm retains its errors/descriptions across teardown and caching.
+      // Once it has associated this generated node, leave it for native/remounted use.
+      const described = (select.getAttribute('aria-describedby') || '').split(/\s+/);
+      if (!existingError && !described.includes(error.id)) error.remove();
       panel.remove();
       attributes.restore();
       controllers.delete(root);

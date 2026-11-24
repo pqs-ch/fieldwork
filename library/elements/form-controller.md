@@ -34,6 +34,8 @@ const editor = enhanceForm(form);
 
 Initialization is idempotent. The installed Turbo bridge owns forms rendered by the Rails helper. Initialize/configure application-managed forms here and manage their lifecycle through the API below; reuse bridge-owned state as described next. Without `save`, valid submission stays native. Server errors/hints are preserved; named radios share one error.
 
+[Searchable selects](searchable-select.md) share the form's associated inline error in either initialization order. The form owns validation and correction while enhanced; the picker mirrors its error state and redirects native-field focus to the visible trigger. Generated errors adopted by the form remain associated after controller teardown for native use and remounting.
+
 ### Reading an existing controller
 
 `enhanceForm(form)` is idempotent: with a live controller, it returns that same object. To read `hasChanges`, `isSubmitting`, or other public state from a Rails helper form, call it **without options after the installed bridge has mounted the current form**. Install the bridge before application lifecycle listeners, and obtain the controller again from the new form after replacement/restoration.

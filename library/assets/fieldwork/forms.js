@@ -6,6 +6,7 @@ import { enhanceErrorSummary } from './error-summary.js';
 import { composeMixedForm } from './internal/mixed-form.js';
 import { fieldValue, restoreField } from './internal/field-values.js';
 import { showConfirmation } from './internal/confirmation.js';
+import { findFieldError, formFieldErrors } from './internal/field-errors.js';
 
 const controllers = new WeakMap();
 let nextErrorId = 0;
@@ -136,6 +137,7 @@ export function enhanceForm(
   function registerFields() {
     fields = readFields();
     const previous = new Map(fieldErrors);
+    previous.forEach((entry, field) => formFieldErrors.delete(field));
     errorGroups.length = 0;
     fieldErrors.clear();
     for (const field of fields) {
@@ -144,10 +146,7 @@ export function enhanceForm(
         field.type === 'radio' && field.name
           ? fields.filter(candidate => candidate.type === 'radio' && candidate.name === field.name)
           : [field];
-      const described = (field.getAttribute('aria-describedby') || '').split(/\s+/);
-      let error = [...form.querySelectorAll('.field-error')].find(
-        node => (field.id && node.dataset.fieldErrorFor === field.id) || described.includes(node.id)
-      );
+      let error = findFieldError(field, form);
       if (!error) {
         error = document.createElement('p');
         do {
@@ -182,6 +181,7 @@ export function enhanceForm(
         describedBy.add(error.id);
         member.setAttribute('aria-describedby', [...describedBy].join(' '));
         fieldErrors.set(member, entry);
+        formFieldErrors.set(member, { error, validate: () => showFieldError(entry) });
       }
     }
   }
@@ -511,6 +511,7 @@ export function enhanceForm(
       if (busy) pending(false, false);
       active = false;
       events.abort();
+      fields.forEach(field => formFieldErrors.delete(field));
       constraints?.disconnect();
       mixed?.destroy();
       summaryController?.destroy();

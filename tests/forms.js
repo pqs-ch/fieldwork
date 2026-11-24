@@ -2,10 +2,147 @@ async page => {
   const origin = __ORIGIN__;
   await page.context().clearCookies();
   page.setDefaultTimeout(10000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
   const checks = [];
   const assert = (ok, label) => { if (!ok) throw new Error(label); };
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  // Use the actual helper-rendered example, with lifecycle adapters stopped so
+  // each initialization order and teardown can be exercised deterministically.
+  const validationPage = await page.context().newPage();
+  try {
+    await validationPage.goto(origin + '/mixed-forms/mixed-form?mode=create');
+    await validationPage.waitForFunction(() => document.querySelector('#project-brief')?.dataset.state === 'ready');
+    await validationPage.evaluate(async () => {
+      const { installTurboElements } = await import('fieldwork/turbo-elements');
+      const { installTurboEditing } = await import('fieldwork/turbo');
+      const { enhanceForm } = await import('fieldwork/forms');
+      const { enhanceSearchableSelect } = await import('fieldwork/searchable-select');
+      installTurboElements([])();
+      installTurboEditing()();
+      const original = document.querySelector('#project-brief');
+      original.querySelector('[data-form-error-summary]').remove();
+      const template = original.cloneNode(true);
+      original.remove();
+      const assert = (ok, message) => { if (!ok) throw new Error(message); };
+      const tick = () => new Promise(resolve => setTimeout(resolve, 30));
+      for (const formFirst of [true, false]) for (const multiple of [false, true]) for (const authoredError of [true, false]) {
+        const form = template.cloneNode(true);
+        delete form.dataset.editingBaseline;
+        document.querySelector('main').append(form);
+        const select = form.querySelector('#project-owner');
+        const root = select.closest('[data-searchable-selection]');
+        const label = root.querySelector('label');
+        const hint = root.querySelector('.hint');
+        let error = root.querySelector('.field-error');
+        if (!authoredError) {
+          error.remove();
+          select.setAttribute('aria-describedby', hint.id);
+        } else {
+          error.hidden = false;
+          error.textContent = 'Server rejected this choice.';
+          select.setAttribute('aria-invalid', 'true');
+        }
+        select.multiple = multiple;
+        if (multiple) select.querySelector('[value=""]').remove();
+        [...select.options].forEach(option => { option.selected = false; });
+        if (!multiple) select.value = '';
+        const initialDescription = select.getAttribute('aria-describedby');
+        const initialLabel = label.outerHTML;
+        let saves = 0;
+        let editor, picker;
+        const mount = () => {
+          if (formFirst) editor = enhanceForm(form, { save: async () => { saves++; } });
+          picker = enhanceSearchableSelect(root);
+          if (!formFirst) editor = enhanceForm(form, { save: async () => { saves++; } });
+        };
+        mount();
+        error = root.querySelector('.field-error');
+        const trigger = () => root.querySelector('.searchable-selection-trigger');
+        assert(root.querySelectorAll('.field-error').length === 1, 'Initialization shares one error in either order');
+        if (authoredError) {
+          assert(!error.hidden && error.textContent === 'Server rejected this choice.', 'Initialization retains the server error');
+          picker.destroy();
+          assert(error.isConnected && label.outerHTML === initialLabel && !select.classList.contains('visually-hidden'), 'Destroy restores native markup and retains the server error');
+          assert(select.getAttribute('aria-describedby') === initialDescription, 'Destroy preserves authored descriptions');
+          picker = enhanceSearchableSelect(root);
+        }
+        form.requestSubmit();
+        await tick();
+        assert(root.querySelectorAll('.field-error:not([hidden])').length === 1 && error.textContent === select.validationMessage, 'Required submission has one form-owned message');
+        assert(document.activeElement === trigger() && trigger().getAttribute('aria-invalid') === 'true', 'Invalid submission focuses the visible picker');
+        const described = trigger().getAttribute('aria-describedby').split(/\s+/);
+        assert(new Set(described).size === described.length && described.includes(hint.id) && described.includes(error.id), 'Trigger descriptions include hint and error once');
+        const choose = async () => {
+          picker.open();
+          await tick();
+          const input = document.getElementById(trigger().getAttribute('aria-controls')).querySelector('input');
+          input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+          input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          picker.close();
+          await tick();
+        };
+        await choose();
+        assert(select.validity.valid && error.hidden && trigger().getAttribute('aria-invalid') === 'false', 'Keyboard correction clears the shared error and invalid state');
+        form.reset();
+        await tick();
+        assert(!select.validity.valid && error.hidden && trigger().getAttribute('aria-invalid') === 'false', 'Discard restores the empty baseline without stale errors');
+        // Exercise both cleanup orders, as lifecycle adapters can own either root.
+        if (formFirst) { editor.destroy(); picker.destroy(); }
+        else { picker.destroy(); editor.destroy(); }
+        assert(error.isConnected && label.outerHTML === initialLabel && !select.hasAttribute('aria-hidden'), 'Adopted errors survive teardown and labels return to the native select');
+        assert(select.getAttribute('aria-describedby').split(/\s+/).every(id => document.getElementById(id)), 'Teardown leaves no dangling descriptions');
+        mount();
+        form.requestSubmit();
+        await tick();
+        assert(root.querySelectorAll('.field-error:not([hidden])').length === 1, 'Re-enhancement does not duplicate errors');
+        await choose();
+        form.requestSubmit();
+        await tick();
+        assert(saves === 1 && editor.isComplete, 'A corrected creation can submit successfully');
+        picker.destroy(); editor.destroy(); form.remove();
+      }
+      // A standalone picker removes only its own transient error, and uses
+      // custom native validity messages rather than misreporting a missing value.
+      const form = template.cloneNode(true);
+      document.querySelector('main').append(form);
+      const select = form.querySelector('#project-owner');
+      const root = select.closest('[data-searchable-selection]');
+      root.querySelector('.field-error').remove();
+      select.setAttribute('aria-describedby', root.querySelector('.hint').id);
+      const before = root.innerHTML;
+      const picker = enhanceSearchableSelect(root);
+      select.setCustomValidity('This choice is unavailable.');
+      select.checkValidity();
+      assert(root.querySelector('.field-error').textContent === 'This choice is unavailable.', 'Standalone picker preserves custom validity');
+      picker.destroy();
+      assert(root.innerHTML === before, 'Standalone destroy restores authored DOM exactly');
+      form.remove();
+      const serverForm = template.cloneNode(true);
+      document.querySelector('main').append(serverForm);
+      const serverSelect = serverForm.querySelector('#project-owner');
+      const serverRoot = serverSelect.closest('[data-searchable-selection]');
+      const serverError = serverRoot.querySelector('.field-error');
+      serverError.hidden = false;
+      serverError.textContent = 'Choose another owner.';
+      serverSelect.setAttribute('aria-invalid', 'true');
+      const serverMarkup = serverRoot.innerHTML;
+      let standalone = enhanceSearchableSelect(serverRoot);
+      standalone.destroy();
+      assert(serverRoot.innerHTML === serverMarkup, 'Standalone destroy preserves an uncorrected server error and descriptions');
+      standalone = enhanceSearchableSelect(serverRoot);
+      serverSelect.value = 'jamie';
+      serverSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      assert(serverError.hidden && !serverSelect.hasAttribute('aria-invalid'), 'Standalone correction clears the existing server error');
+      serverForm.reset();
+      await tick();
+      assert(serverError.hidden && serverSelect.value === 'alex', 'Standalone native reset restores the selection without resurrecting a server error');
+      standalone.destroy();
+      assert(serverError.isConnected && serverError.hidden, 'Standalone cleanup retains the corrected authored error node');
+      serverForm.remove();
+    });
+  } finally { await validationPage.close(); }
+  checks.push('select validation: Rails helper, both initialization/cleanup orders, single/multiple errors, focus, keyboard correction, Discard, server errors and re-enhancement');
   const form = page.locator('#project-brief');
   const rows = page.locator('[data-repeat-list] [data-repeat-item]');
   const save = page.getByRole('button', { name: 'Save project', exact: true });
@@ -55,10 +192,13 @@ async page => {
   assert(await save.isEnabled(), 'Failure permits retry');
   checks.push('mixed forms: dynamic validation, contextual summary focus, failed-request draft and File retention');
 
+  await page.getByRole('button', { name: 'Clear Owner', exact: true }).click();
+  await save.click();
   await page.getByLabel('Require a due date for every deliverable', { exact: true }).check();
   await discard.click();
   assert(await page.getByRole('dialog').count() === 1, 'Mixed Discard opens exactly one decision');
   await page.getByRole('button', { name: 'Keep editing', exact: true }).click();
+  assert(await page.locator('[data-searchable-selection][data-label="Owner"] .field-error:visible').count() === 1, 'Canceled Discard retains the shared picker error');
   assert(await page.locator('#brief-files').evaluate(el => el.files.length === 1), 'Canceled Discard preserves files');
   assert(await discard.evaluate(el => el === document.activeElement), 'Canceled Discard restores focus');
   await discard.click();
@@ -182,6 +322,9 @@ async page => {
   assert(await page.getByRole('option', { name: 'Obsolete result', exact: true }).count() === 0, 'Late lookup cannot replace current results');
   await page.keyboard.press('Escape');
   await page.unroute('**/mixed-form/people?q=slow');
+  await page.getByRole('button', { name: 'Clear Owner', exact: true }).click();
+  await save.click();
+  assert(await page.locator('[data-searchable-selection][data-label="Owner"] .field-error:visible').count() === 1, 'Invalid draft has one error before Turbo navigation');
   await page.getByRole('link', { name: 'Workspace', exact: true }).click();
   await page.waitForURL('**/mixed-form/other');
   assert(await page.locator('main').count() === 1, 'The return destination has one main landmark');
@@ -190,7 +333,9 @@ async page => {
   await page.waitForURL('**/mixed-form');
   await ready();
   assert(await page.locator('#project-owner').inputValue() === 'alex', 'Turbo return renders authoritative saved values');
+  assert(await page.locator('[data-searchable-selection][data-label="Owner"] .field-error:visible').count() === 0, 'Authoritative Turbo return clears the obsolete draft error');
   assert(await page.locator('.searchable-selection-trigger').count() === 2, 'Turbo restoration mounts one picker per field');
+  assert(await page.locator('[data-searchable-selection]').evaluateAll(roots => roots.every(root => root.querySelectorAll('.field-error').length === 1)), 'Turbo restoration retains one error per picker');
   assert(await page.getByRole('heading', { name: 'Project brief', exact: true }).evaluate(el => el !== document.activeElement), 'History return must not autofocus the title');
   await page.getByRole('link', { name: 'Workspace', exact: true }).click();
   await page.getByRole('link', { name: 'Return to project brief', exact: true }).click();
@@ -330,6 +475,16 @@ async page => {
   await page.waitForFunction(() => document.querySelector('#project-brief')?.dataset.state === 'ready');
   const create = page.getByRole('button', { name: 'Create project', exact: true });
   assert(await create.isEnabled(), 'Mixed creation permits unchanged defaults');
+  await page.getByRole('button', { name: 'Clear Owner', exact: true }).click();
+  await create.click();
+  const owner = page.locator('[data-searchable-selection][data-label="Owner"]');
+  assert(await owner.locator('.field-error:visible').count() === 1, 'Required helper select shows one error in a live creation form');
+  await page.locator('[data-form-error-summary] a[href="#project-owner"]').click();
+  assert(await owner.locator('.searchable-selection-trigger').evaluate(el => el === document.activeElement), 'Summary link focuses the visible owner picker');
+  await page.keyboard.press('ArrowDown');
+  await page.getByRole('combobox').press('ArrowDown');
+  await page.getByRole('combobox').press('Enter');
+  assert(await owner.locator('.field-error:visible').count() === 0 && await owner.locator('.searchable-selection-trigger').getAttribute('aria-invalid') === 'false', 'Keyboard owner correction recovers without stale errors');
   await page.locator('#brief-files').setInputFiles({ name: 'created.txt', mimeType: 'text/plain', buffer: Buffer.from('creation upload') });
   await create.click();
   await page.waitForFunction(() => document.querySelector('#project-brief').dataset.state === 'created');

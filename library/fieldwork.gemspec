@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name = "fieldwork"
-  spec.version = "0.3.0"
+  spec.version = "0.3.1"
   spec.summary = "Shared UI contracts, styles, and native behavior for Rails applications"
   spec.authors = ["Fieldwork maintainers"]
   spec.homepage = "https://github.com/pqs-ch/fieldwork"
